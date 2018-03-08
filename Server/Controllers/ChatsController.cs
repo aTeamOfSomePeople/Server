@@ -24,10 +24,10 @@ namespace Server.Controllers
         }
 
         // GET: api/Chats/5
-        [ResponseType(typeof(Chats))]
+        [ResponseType(typeof(Chats[]))]
         public async Task<IHttpActionResult> GetChats(int id)
         {
-            Chats chats = await db.Chats.FindAsync(id);
+            var chats = db.Messages.SqlQuery("GetUserChats", id);
             if (chats == null)
             {
                 return NotFound();

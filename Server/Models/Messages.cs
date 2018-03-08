@@ -11,9 +11,10 @@ namespace Server.Models
         public int Id { get; set; }
 
         //Foreign keys
-        [ForeignKey("Id")]
         public int ChatId { get; set; }
-        [ForeignKey("Id")]
         public int UserId { get; set; }
+
+        public string Text { get; set; }
+        public DateTime Date { get; set; }    
     }
 }

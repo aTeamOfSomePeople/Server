@@ -9,10 +9,9 @@ namespace Server.Models
 {
     public class UsersInChats
     {
+        public int Id { get; set; }
         //Foreign keys
-        [Key, Column(Order = 0)]
         public int ChatId { get; set; }
-        [Key, Column(Order = 1)]
         public int UserId { get; set; }
     }
 }

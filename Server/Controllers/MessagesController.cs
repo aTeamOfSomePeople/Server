@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -24,10 +25,10 @@ namespace Server.Controllers
         }
 
         // GET: api/Messages/5
-        [ResponseType(typeof(Messages))]
+        [ResponseType(typeof(Messages[]))]
         public async Task<IHttpActionResult> GetMessages(int id)
         {
-            Messages messages = await db.Messages.FindAsync(id);
+            var messages = db.Messages.SqlQuery("GetMessagesFromChat @id", new SqlParameter("id",id)).ToArray();
             if (messages == null)
             {
                 return NotFound();

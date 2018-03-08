@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -28,6 +29,19 @@ namespace Server.Controllers
         public async Task<IHttpActionResult> GetUsers(int id)
         {
             Users users = await db.Users.FindAsync(id);
+            if (users == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(users);
+        }
+
+        // GET: api/Users/5
+        [ResponseType(typeof(int))]
+        public async Task<IHttpActionResult> GetUsers(string login, string password)
+        {
+            var users = db.Users.SqlQuery("GetUserId @login, @password", new SqlParameter("login", login), new SqlParameter("password", password));
             if (users == null)
             {
                 return NotFound();
