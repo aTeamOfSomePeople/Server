@@ -37,6 +37,19 @@ namespace Server.Controllers
             return Ok(users);
         }
 
+        // GET: api/Users
+        [ResponseType(typeof(Users[]))]
+        public async Task<IHttpActionResult> GetUsers(string name)
+        {
+            var users = db.Users.SqlQuery("FindUsers @name", new SqlParameter("name", name));
+            if (users == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(users);
+        }
+
         // GET: api/Users/
         [ResponseType(typeof(Users))]
         public async Task<IHttpActionResult> GetUsers(string login, string password)
