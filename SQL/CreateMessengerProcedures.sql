@@ -11,3 +11,7 @@ go
 create procedure GetUser(@login nvarchar(30), @password nvarchar(30))
 as
 select * from Users where @login = [login] and @password = [password]
+go
+create procedure GetAttachmentsToMessage(@id int)
+as
+select Attachments.Id, Link, MessageId from Attachments, [Messages] where MessageId = @id

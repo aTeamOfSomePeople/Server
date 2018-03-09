@@ -92,10 +92,10 @@ namespace Server.Controllers
                 {
                     return Conflict();
                 }
-                else
-                {
-                    throw;
-                }
+                //else
+                //{
+                //    throw;
+                //}
             }
 
             return CreatedAtRoute("DefaultApi", new { id = usersInChats.ChatId }, usersInChats);

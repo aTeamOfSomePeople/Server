@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -24,10 +25,10 @@ namespace Server.Controllers
         }
 
         // GET: api/Attachments/5
-        [ResponseType(typeof(Attachments))]
+        [ResponseType(typeof(Attachments[]))]
         public async Task<IHttpActionResult> GetAttachments(int id)
         {
-            Attachments attachments = await db.Attachments.FindAsync(id);
+            var attachments = db.Attachments.SqlQuery("GetAttachmentsToMessage @id", new SqlParameter("id", id));
             if (attachments == null)
             {
                 return NotFound();

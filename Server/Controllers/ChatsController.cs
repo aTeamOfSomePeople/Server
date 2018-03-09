@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -27,7 +28,7 @@ namespace Server.Controllers
         [ResponseType(typeof(Chats[]))]
         public async Task<IHttpActionResult> GetChats(int id)
         {
-            var chats = db.Messages.SqlQuery("GetUserChats", id);
+            var chats = db.Chats.SqlQuery("GetUserChats @id", new SqlParameter("id",id));
             if (chats == null)
             {
                 return NotFound();
