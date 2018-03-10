@@ -18,4 +18,4 @@ select Attachments.Id, Link, MessageId from Attachments, [Messages] where Messag
 go
 create procedure FindUsers(@name nvarchar(50))
 as
-select Id, [Name], [Login], '' from Users where [Name] like '%' + @name + '%' or [Login] like '%' + @name + '%'
+select Id, [Name], [Login], '' as [Password], Avatar from Users where [Name] like '%' + @name + '%' or [Login] like '%' + @name + '%'
