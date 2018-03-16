@@ -22,7 +22,7 @@ namespace Server.Controllers
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
 
             var usersInChats = await db.UsersInChats.ToListAsync();
-            usersInChats.ForEach(e => { e.Chat = null; e.User = null; });
+            usersInChats.ForEach(e => { e.Chat = null; e.User = null;});
             jsonResult.Data = usersInChats;
 
             return jsonResult;

@@ -21,9 +21,7 @@ namespace Server.Controllers
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
 
-            var messages = await db.Messages.ToListAsync();
-            messages.ForEach(e => { e.Chat = null; e.User = null; });
-            jsonResult.Data = messages;
+            jsonResult.Data = await db.Messages.Select(e => new { Id = e.Id, Text = e.Text, Date = e.Date, ChatId = e.ChatId, UserId = e.UserId, IsReader = e.IsReaded}).ToListAsync();
 
             return jsonResult;
         }
@@ -38,15 +36,13 @@ namespace Server.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Messages messages = await db.Messages.FindAsync(id);
+            var messages = db.Messages.Select(e => new { Id = e.Id, Text = e.Text, Date = e.Date, ChatId = e.ChatId, UserId = e.UserId, IsReader = e.IsReaded }).Where(e => e.Id == id).First();
             if (messages == null)
             {
                 return HttpNotFound();
             }
-
-            messages.Chat = null;
-            messages.User = null;
             jsonResult.Data = messages;
+
             return jsonResult;
         }
 
@@ -60,13 +56,13 @@ namespace Server.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            var messages = await db.Messages.Where(z => z.ChatId == ChatId).ToListAsync();
+            var messages = await db.Messages.Select(e => new { Id = e.Id, Text = e.Text, Date = e.Date, ChatId = e.ChatId, UserId = e.UserId, IsReader = e.IsReaded }).Where(z => z.ChatId == ChatId).ToListAsync();
             if (messages == null)
             {
                 return HttpNotFound();
             }
-            messages.ForEach(e => { e.Chat = null; e.User = null; });
             jsonResult.Data = messages;
+
             return jsonResult;
         }
 

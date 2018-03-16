@@ -20,9 +20,7 @@ namespace Server.Controllers
         {
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
-            var chats = await db.Chats.ToListAsync();
-            chats.ForEach(e => e.User = null);
-            jsonResult.Data = chats;
+            jsonResult.Data = await db.Chats.Select(e => new { Id = e.Id, Creator = e.Creator, Name = e.Name, Type = e.Type }).ToListAsync();
 
             return jsonResult;
         }
@@ -37,12 +35,11 @@ namespace Server.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            var chats = await db.Chats.FindAsync(id);
+            var chats = db.Chats.Select(e => new { Id = e.Id, Creator = e.Creator, Name = e.Name, Type = e.Type }).Where(e => e.Id == id).First();
             if (chats == null)
             {
                 return HttpNotFound();
             }
-            chats.User = null;
             jsonResult.Data = chats;
 
             return jsonResult;
@@ -58,12 +55,11 @@ namespace Server.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            var chats = await db.Chats.Where(e =>  db.UsersInChats.Any(el => el.UserId == UserId && e.Id == el.ChatId)).ToListAsync();
+            var chats = await db.Chats.Select(e => new { Id = e.Id, Creator = e.Creator, Name = e.Name, Type = e.Type }).Where(e =>  db.UsersInChats.Any(el => el.UserId == UserId && e.Id == el.ChatId)).ToListAsync();
             if (chats == null)
             {
                 return HttpNotFound();
             }
-            chats.ForEach(e => e.User = null);
             jsonResult.Data = chats;
 
             return jsonResult;
