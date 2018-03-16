@@ -7,18 +7,16 @@ using System.Web;
 
 namespace Server.Models
 {
-    public class UsersInChats
+    public class DeletedMessages
     {
         public int Id { get; set; }
 
-        [Required, ForeignKey("Chat"), Index("ChatUser", IsUnique = true, Order = 1)]
-        public int ChatId { get; set; }
-        public virtual Chats Chat {get; set;}
-
-        [Required, ForeignKey("User"), Index("ChatUser", IsUnique = true, Order = 2)]
+        [Required, ForeignKey("User"), Index("UserMessage", IsUnique = true, Order = 1)]
         public int UserId { get; set; }
         public virtual Users User { get; set; }
 
-        public int UnreadedMessages { get; set; }
+        [Required, ForeignKey("Message"), Index("UserMessage", IsUnique = true, Order = 2)]
+        public int MessageId { get; set; }
+        public virtual Messages Message { get; set; }
     }
 }

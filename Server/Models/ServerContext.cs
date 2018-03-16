@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Entity;
+using System.Data.Entity.ModelConfiguration.Conventions;
 using System.Linq;
 using System.Web;
 
@@ -19,6 +20,12 @@ namespace Server.Models
         {
         }
 
+        protected override void OnModelCreating(DbModelBuilder modelBuilder)
+        {
+            modelBuilder.Conventions.Remove<OneToManyCascadeDeleteConvention>();
+            base.OnModelCreating(modelBuilder);
+        }
+
         public System.Data.Entity.DbSet<Server.Models.Attachments> Attachments { get; set; }
 
         public System.Data.Entity.DbSet<Server.Models.Chats> Chats { get; set; }
@@ -28,5 +35,9 @@ namespace Server.Models
         public System.Data.Entity.DbSet<Server.Models.Users> Users { get; set; }
 
         public System.Data.Entity.DbSet<Server.Models.UsersInChats> UsersInChats { get; set; }
+        
+        public System.Data.Entity.DbSet<Server.Models.DisabledUsers> DisabledUsers { get; set; }
+
+        public System.Data.Entity.DbSet<Server.Models.DeletedMessages> DeletedMessages { get; set; }
     }
 }

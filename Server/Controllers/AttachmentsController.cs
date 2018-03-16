@@ -2,105 +2,116 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
-using System.Data.Entity.Infrastructure;
-using System.Data.SqlClient;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
 using System.Threading.Tasks;
-using System.Web.Http;
-using System.Web.Http.Description;
+using System.Net;
+using System.Web;
+using System.Web.Mvc;
 using Server.Models;
 
 namespace Server.Controllers
 {
-    public class AttachmentsController : ApiController
+    public class AttachmentsController : Controller
     {
         private ServerContext db = new ServerContext();
 
-        // GET: api/Attachments
-        public IQueryable<Attachments> GetAttachments()
+        // GET: Attachments
+        public async Task<ActionResult> Index()
         {
-            return db.Attachments;
+            var jsonResult = new JsonResult();
+            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+
+            var attachments = await db.Attachments.ToListAsync();
+            attachments.ForEach(e => e.Message = null);
+            jsonResult.Data = attachments;
+
+            return jsonResult;
         }
 
-        // GET: api/Attachments/5
-        [ResponseType(typeof(Attachments[]))]
-        public async Task<IHttpActionResult> GetAttachments(int id)
+        // GET: Attachments/Details/5
+        public async Task<ActionResult> Details(int? id)
         {
-            var attachments = db.Attachments.SqlQuery("GetAttachmentsToMessage @id", new SqlParameter("id", id));
+            var jsonResult = new JsonResult();
+            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+
+            if (id == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            var attachments = await db.Attachments.FindAsync(id);
             if (attachments == null)
             {
-                return NotFound();
+                return HttpNotFound();
             }
+            attachments.Message = null;
+            jsonResult.Data = attachments;
 
-            return Ok(attachments);
+            return jsonResult;
         }
 
-        // PUT: api/Attachments/5
-        [ResponseType(typeof(void))]
-        public async Task<IHttpActionResult> PutAttachments(int id, Attachments attachments)
+        // POST: Attachments/Create
+        // Чтобы защититься от атак чрезмерной передачи данных, включите определенные свойства, для которых следует установить привязку. Дополнительные 
+        // сведения см. в статье https://go.microsoft.com/fwlink/?LinkId=317598.
+        [HttpPost]
+        //[ValidateAntiForgeryToken]
+        public async Task<ActionResult> Create( Attachments attachments)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            var jsonResult = new JsonResult();
+            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
 
-            if (id != attachments.Id)
+            if (ModelState.IsValid)
             {
-                return BadRequest();
-            }
-
-            db.Entry(attachments).State = EntityState.Modified;
-
-            try
-            {
+                db.Attachments.Add(attachments);
                 await db.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!AttachmentsExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                jsonResult.Data = attachments;
+                return jsonResult;
             }
 
-            return StatusCode(HttpStatusCode.NoContent);
+            jsonResult.Data = false;
+            return jsonResult;
         }
 
-        // POST: api/Attachments
-        [ResponseType(typeof(Attachments))]
-        public async Task<IHttpActionResult> PostAttachments(Attachments attachments)
+        // POST: Attachments/Edit/5
+        // Чтобы защититься от атак чрезмерной передачи данных, включите определенные свойства, для которых следует установить привязку. Дополнительные 
+        // сведения см. в статье https://go.microsoft.com/fwlink/?LinkId=317598.
+        [HttpPost]
+        //[ValidateAntiForgeryToken]
+        public async Task<ActionResult> Edit( Attachments attachments)
         {
-            if (!ModelState.IsValid)
+            var jsonResult = new JsonResult();
+            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+
+            if (ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                db.Entry(attachments).State = EntityState.Modified;
+                await db.SaveChangesAsync();
+                jsonResult.Data = true;
+                return jsonResult;
             }
 
-            db.Attachments.Add(attachments);
-            await db.SaveChangesAsync();
-
-            return CreatedAtRoute("DefaultApi", new { id = attachments.Id }, attachments);
+            jsonResult.Data = false;
+            return jsonResult;
         }
 
-        // DELETE: api/Attachments/5
-        [ResponseType(typeof(Attachments))]
-        public async Task<IHttpActionResult> DeleteAttachments(int id)
+        // POST: Attachments/Delete/5
+        [HttpPost, ActionName("Delete")]
+        //[ValidateAntiForgeryToken]
+        public async Task<ActionResult> Delete(int id)
         {
+            var jsonResult = new JsonResult();
+            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+
             Attachments attachments = await db.Attachments.FindAsync(id);
-            if (attachments == null)
+            if (attachments != null)
             {
-                return NotFound();
+                db.Attachments.Remove(attachments);
+                await db.SaveChangesAsync();
+                jsonResult.Data = true;
+                return jsonResult;
             }
 
-            db.Attachments.Remove(attachments);
-            await db.SaveChangesAsync();
-
-            return Ok(attachments);
+            jsonResult.Data = false;
+            return jsonResult;
         }
 
         protected override void Dispose(bool disposing)
@@ -110,11 +121,6 @@ namespace Server.Controllers
                 db.Dispose();
             }
             base.Dispose(disposing);
-        }
-
-        private bool AttachmentsExists(int id)
-        {
-            return db.Attachments.Count(e => e.Id == id) > 0;
         }
     }
 }

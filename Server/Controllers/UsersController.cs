@@ -2,130 +2,167 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
-using System.Data.Entity.Infrastructure;
-using System.Data.SqlClient;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
 using System.Threading.Tasks;
-using System.Web.Http;
-using System.Web.Http.Description;
+using System.Net;
+using System.Web;
+using System.Web.Mvc;
 using Server.Models;
 
 namespace Server.Controllers
 {
-    public class UsersController : ApiController
+    public class UsersController : Controller
     {
         private ServerContext db = new ServerContext();
 
-        // GET: api/Users
-        public IQueryable<Users> GetUsers()
+        // GET: Users
+        public async Task<ActionResult> Index()
         {
-            return db.Users;
+            var jsonResult = new JsonResult();
+            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+
+            jsonResult.Data = await db.Users.ToListAsync();
+            
+            return jsonResult;
         }
 
-        // GET: api/Users/5
-        [ResponseType(typeof(Users))]
-        public async Task<IHttpActionResult> GetUsers(int id)
+        // GET: Users/Details/5
+        public async Task<ActionResult> Details(int? id)
         {
+            var jsonResult = new JsonResult();
+            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+
+            if (id == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
             Users users = await db.Users.FindAsync(id);
-            if (users == null)
+            if (users != null)
             {
-                return NotFound();
+                users.Password = null;
             }
+            jsonResult.Data = users;
 
-            return Ok(users);
+            return jsonResult;
         }
 
-        // GET: api/Users
-        [ResponseType(typeof(Users[]))]
-        public async Task<IHttpActionResult> GetUsers(string name)
+        //GET: Users/IsExists
+        public async Task<ActionResult> IsExists(string login, string password)
         {
-            var users = db.Users.SqlQuery("FindUsers @name", new SqlParameter("name", name));
-            if (users == null)
-            {
-                return NotFound();
-            }
+            var jsonResult = new JsonResult();
+            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
 
-            return Ok(users);
+            var user = await db.Users.SingleOrDefaultAsync(element => element.Login == login && element.Password == password);
+
+            if (user != null)
+            {
+                user.Password = null;
+            }
+            jsonResult.Data = user;
+
+            return jsonResult;
         }
 
-        // GET: api/Users/
-        [ResponseType(typeof(Users))]
-        public async Task<IHttpActionResult> GetUsers(string login, string password)
+        //GET: Users/FindUsers/"test"
+        public async Task<ActionResult> FindUsers(string Name)
         {
-            var users = db.Users.SqlQuery("GetUser @login, @password", new SqlParameter("login", login), new SqlParameter("password", password)).First();
+            var jsonResult = new JsonResult();
+            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+
+            if (Name == null)
+            {
+                return await Index();
+            }
+
+            var users = await db.Users.Where(e => e.Name.Contains(Name) || e.Login.Contains(Name)).ToListAsync();
+            users.ForEach(e => e.Password = null);
+            jsonResult.Data = users;
+
+            return jsonResult;
+        }
+        //GET: Users/ChatUsers/5
+        public async Task<ActionResult> ChatUsers(int? ChatId)
+        {
+            var jsonResult = new JsonResult();
+            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+
+            if (ChatId == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            var users = await db.Users.ToListAsync();//Join(db.UsersInChats, oKey => oKey.Id, iKey => iKey.UserId, (oKey, iKey) => new { oKey, iKey }).Where(element => element.iKey.Id == userId).Select(z => new { Id = z.oKey.Id, Name = z.oKey.Name, Email = z.oKey.Email, Login = z.oKey.Login, Password = z.oKey.Password, Avatar = z.oKey.Avatar }).ToListAsync();
             if (users == null)
             {
-                return NotFound();
+                return HttpNotFound();
             }
-            return Ok(users);
+
+            jsonResult.Data = users;
+            return jsonResult;
         }
 
-        // PUT: api/Users/5
-        [ResponseType(typeof(void))]
-        public async Task<IHttpActionResult> PutUsers(int id, Users users)
+        // POST: Users/Create
+        // Чтобы защититься от атак чрезмерной передачи данных, включите определенные свойства, для которых следует установить привязку. Дополнительные 
+        // сведения см. в статье https://go.microsoft.com/fwlink/?LinkId=317598.
+        [HttpPost]
+        //[ValidateAntiForgeryToken]
+        public async Task<ActionResult> Create( Users users)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            var jsonResult = new JsonResult();
+            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
 
-            if (id != users.Id)
+            if (ModelState.IsValid)
             {
-                return BadRequest();
-            }
-
-            db.Entry(users).State = EntityState.Modified;
-
-            try
-            {
+                db.Users.Add(users);
                 await db.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!UsersExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                jsonResult.Data = true;
+                return jsonResult;
             }
 
-            return StatusCode(HttpStatusCode.NoContent);
+            jsonResult.Data = false;
+            return jsonResult;
         }
 
-        // POST: api/Users
-        [ResponseType(typeof(Users))]
-        public async Task<IHttpActionResult> PostUsers(Users users)
+        // POST: Users/Edit/5
+        // Чтобы защититься от атак чрезмерной передачи данных, включите определенные свойства, для которых следует установить привязку. Дополнительные 
+        // сведения см. в статье https://go.microsoft.com/fwlink/?LinkId=317598.
+        [HttpPost]
+        //[ValidateAntiForgeryToken]
+        public async Task<ActionResult> Edit( Users users)
         {
-            if (!ModelState.IsValid)
+            var jsonResult = new JsonResult();
+            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+
+            if (ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                db.Entry(users).State = EntityState.Modified;
+                await db.SaveChangesAsync();
+                jsonResult.Data = true;
+                return jsonResult;
             }
 
-            db.Users.Add(users);
-            await db.SaveChangesAsync();
-
-            return CreatedAtRoute("DefaultApi", new { id = users.Id }, users);
+            jsonResult.Data = false;
+            return jsonResult;
         }
 
-        // DELETE: api/Users/5
-        [ResponseType(typeof(Users))]
-        public async Task<IHttpActionResult> DeleteUsers(int id)
+        // POST: Users/Delete/5
+        [HttpPost, ActionName("Delete")]
+        //[ValidateAntiForgeryToken]
+        public async Task<ActionResult> Delete(int id)
         {
+            var jsonResult = new JsonResult();
+            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+
             Users users = await db.Users.FindAsync(id);
-            if (users == null)
+            if (users != null)
             {
-                return NotFound();
+                db.Users.Remove(users);
+                await db.SaveChangesAsync();
+                jsonResult.Data = true;
+                return jsonResult;
             }
 
-            db.Users.Remove(users);
-            await db.SaveChangesAsync();
-
-            return Ok(users);
+            jsonResult.Data = false;
+            return jsonResult;
         }
 
         protected override void Dispose(bool disposing)
@@ -135,11 +172,6 @@ namespace Server.Controllers
                 db.Dispose();
             }
             base.Dispose(disposing);
-        }
-
-        private bool UsersExists(int id)
-        {
-            return db.Users.Count(e => e.Id == id) > 0;
         }
     }
 }

@@ -2,119 +2,118 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
-using System.Data.Entity.Infrastructure;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
 using System.Threading.Tasks;
-using System.Web.Http;
-using System.Web.Http.Description;
+using System.Net;
+using System.Web;
+using System.Web.Mvc;
 using Server.Models;
 
 namespace Server.Controllers
 {
-    public class UsersInChatsController : ApiController
+    public class UsersInChatsController : Controller
     {
         private ServerContext db = new ServerContext();
 
-        // GET: api/UsersInChats
-        public IQueryable<UsersInChats> GetUsersInChats()
+        // GET: UsersInChats
+        public async Task<ActionResult> Index()
         {
-            return db.UsersInChats;
+            var jsonResult = new JsonResult();
+            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+
+            var usersInChats = await db.UsersInChats.ToListAsync();
+            usersInChats.ForEach(e => { e.Chat = null; e.User = null; });
+            jsonResult.Data = usersInChats;
+
+            return jsonResult;
         }
 
-        // GET: api/UsersInChats/5
-        [ResponseType(typeof(UsersInChats))]
-        public async Task<IHttpActionResult> GetUsersInChats(int id)
+        // GET: UsersInChats/Details/5
+        public async Task<ActionResult> Details(int? id)
         {
+            var jsonResult = new JsonResult();
+            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+
+
+            if (id == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
             UsersInChats usersInChats = await db.UsersInChats.FindAsync(id);
             if (usersInChats == null)
             {
-                return NotFound();
+                return HttpNotFound();
             }
+            usersInChats.Chat = null;
+            usersInChats.User = null;
+            jsonResult.Data = usersInChats;
 
-            return Ok(usersInChats);
+            return jsonResult;
         }
 
-        // PUT: api/UsersInChats/5
-        [ResponseType(typeof(void))]
-        public async Task<IHttpActionResult> PutUsersInChats(int id, UsersInChats usersInChats)
+        // POST: UsersInChats/Create
+        // Чтобы защититься от атак чрезмерной передачи данных, включите определенные свойства, для которых следует установить привязку. Дополнительные 
+        // сведения см. в статье https://go.microsoft.com/fwlink/?LinkId=317598.
+        [HttpPost]
+        //[ValidateAntiForgeryToken]
+        public async Task<ActionResult> Create( UsersInChats usersInChats)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            var jsonResult = new JsonResult();
+            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
 
-            if (id != usersInChats.ChatId)
+            if (ModelState.IsValid)
             {
-                return BadRequest();
-            }
-
-            db.Entry(usersInChats).State = EntityState.Modified;
-
-            try
-            {
+                db.UsersInChats.Add(usersInChats);
                 await db.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!UsersInChatsExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                jsonResult.Data = usersInChats;
+                return jsonResult;
             }
 
-            return StatusCode(HttpStatusCode.NoContent);
+            jsonResult.Data = false;
+            return jsonResult;
         }
 
-        // POST: api/UsersInChats
-        [ResponseType(typeof(UsersInChats))]
-        public async Task<IHttpActionResult> PostUsersInChats(UsersInChats usersInChats)
+        // POST: UsersInChats/Edit/5
+        // Чтобы защититься от атак чрезмерной передачи данных, включите определенные свойства, для которых следует установить привязку. Дополнительные 
+        // сведения см. в статье https://go.microsoft.com/fwlink/?LinkId=317598.
+        [HttpPost]
+        //[ValidateAntiForgeryToken]
+        public async Task<ActionResult> Edit(UsersInChats usersInChats)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            var jsonResult = new JsonResult();
+            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
 
-            db.UsersInChats.Add(usersInChats);
-
-            try
+            if (ModelState.IsValid)
             {
+                db.Entry(usersInChats).State = EntityState.Modified;
                 await db.SaveChangesAsync();
-            }
-            catch (DbUpdateException)
-            {
-                if (UsersInChatsExists(usersInChats.ChatId))
-                {
-                    return Conflict();
-                }
-                //else
-                //{
-                //    throw;
-                //}
+                jsonResult.Data = true;
+                return jsonResult;
             }
 
-            return CreatedAtRoute("DefaultApi", new { id = usersInChats.ChatId }, usersInChats);
+            jsonResult.Data = false;
+            return jsonResult;
         }
 
-        // DELETE: api/UsersInChats/5
-        [ResponseType(typeof(UsersInChats))]
-        public async Task<IHttpActionResult> DeleteUsersInChats(int id)
+        // POST: UsersInChats/Delete/5
+        [HttpPost, ActionName("Delete")]
+        //[ValidateAntiForgeryToken]
+        public async Task<ActionResult> Delete(int id)
         {
+            var jsonResult = new JsonResult();
+            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+
             UsersInChats usersInChats = await db.UsersInChats.FindAsync(id);
-            if (usersInChats == null)
+            if (usersInChats != null)
             {
-                return NotFound();
+                db.UsersInChats.Remove(usersInChats);
+                await db.SaveChangesAsync();
+                jsonResult.Data = true;
+                return jsonResult;
             }
 
-            db.UsersInChats.Remove(usersInChats);
-            await db.SaveChangesAsync();
-
-            return Ok(usersInChats);
+            jsonResult.Data = false;
+            return jsonResult;
         }
 
         protected override void Dispose(bool disposing)
@@ -124,11 +123,6 @@ namespace Server.Controllers
                 db.Dispose();
             }
             base.Dispose(disposing);
-        }
-
-        private bool UsersInChatsExists(int id)
-        {
-            return db.UsersInChats.Count(e => e.ChatId == id) > 0;
         }
     }
 }

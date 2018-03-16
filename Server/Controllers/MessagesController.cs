@@ -2,105 +2,140 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
-using System.Data.Entity.Infrastructure;
-using System.Data.SqlClient;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
 using System.Threading.Tasks;
-using System.Web.Http;
-using System.Web.Http.Description;
+using System.Net;
+using System.Web;
+using System.Web.Mvc;
 using Server.Models;
 
 namespace Server.Controllers
 {
-    public class MessagesController : ApiController
+    public class MessagesController : Controller
     {
         private ServerContext db = new ServerContext();
 
-        // GET: api/Messages
-        public IQueryable<Messages> GetMessages()
+        // GET: Messages
+        public async Task<ActionResult> Index()
         {
-            return db.Messages;
+            var jsonResult = new JsonResult();
+            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+
+            var messages = await db.Messages.ToListAsync();
+            messages.ForEach(e => { e.Chat = null; e.User = null; });
+            jsonResult.Data = messages;
+
+            return jsonResult;
         }
 
-        // GET: api/Messages/5
-        [ResponseType(typeof(Messages[]))]
-        public async Task<IHttpActionResult> GetMessages(int id)
+        // GET: Messages/Details/5
+        public async Task<ActionResult> Details(int? id)
         {
-            var messages = db.Messages.SqlQuery("GetMessagesFromChat @id", new SqlParameter("id",id)).ToArray();
-            if (messages == null)
+            var jsonResult = new JsonResult();
+            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+
+            if (id == null)
             {
-                return NotFound();
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-
-            return Ok(messages);
-        }
-
-        // PUT: api/Messages/5
-        [ResponseType(typeof(void))]
-        public async Task<IHttpActionResult> PutMessages(int id, Messages messages)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            if (id != messages.Id)
-            {
-                return BadRequest();
-            }
-
-            db.Entry(messages).State = EntityState.Modified;
-
-            try
-            {
-                await db.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!MessagesExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return StatusCode(HttpStatusCode.NoContent);
-        }
-
-        // POST: api/Messages
-        [ResponseType(typeof(Messages))]
-        public async Task<IHttpActionResult> PostMessages(Messages messages)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            db.Messages.Add(messages);
-            await db.SaveChangesAsync();
-
-            return CreatedAtRoute("DefaultApi", new { id = messages.Id }, messages);
-        }
-
-        // DELETE: api/Messages/5
-        [ResponseType(typeof(Messages))]
-        public async Task<IHttpActionResult> DeleteMessages(int id)
-        {
             Messages messages = await db.Messages.FindAsync(id);
             if (messages == null)
             {
-                return NotFound();
+                return HttpNotFound();
             }
 
-            db.Messages.Remove(messages);
-            await db.SaveChangesAsync();
+            messages.Chat = null;
+            messages.User = null;
+            jsonResult.Data = messages;
+            return jsonResult;
+        }
 
-            return Ok(messages);
+        public async Task<ActionResult> ChatMessages(int? ChatId, int? UserId)
+        {
+            var jsonResult = new JsonResult();
+            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+
+
+            if (ChatId == null || UserId == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            var messages = await db.Messages.Where(z => z.ChatId == ChatId).ToListAsync();
+            if (messages == null)
+            {
+                return HttpNotFound();
+            }
+            messages.ForEach(e => { e.Chat = null; e.User = null; });
+            jsonResult.Data = messages;
+            return jsonResult;
+        }
+
+        // POST: Messages/Create
+        // Чтобы защититься от атак чрезмерной передачи данных, включите определенные свойства, для которых следует установить привязку. Дополнительные 
+        // сведения см. в статье https://go.microsoft.com/fwlink/?LinkId=317598.
+        [HttpPost]
+        //[ValidateAntiForgeryToken]
+        public async Task<ActionResult> Create(Messages messages)
+        {
+            var jsonResult = new JsonResult();
+            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+
+            if (ModelState.IsValid)
+            {
+                messages.IsReaded = false;
+                messages.Date = DateTime.Now;
+                db.Messages.Add(messages);
+                await db.SaveChangesAsync();
+                jsonResult.Data = messages;
+                return jsonResult;
+            }
+
+            jsonResult.Data = false;
+            return jsonResult;
+        }
+
+        // POST: Messages/Edit/5
+        // Чтобы защититься от атак чрезмерной передачи данных, включите определенные свойства, для которых следует установить привязку. Дополнительные 
+        // сведения см. в статье https://go.microsoft.com/fwlink/?LinkId=317598.
+        [HttpPost]
+        //[ValidateAntiForgeryToken]
+        public async Task<ActionResult> Edit( Messages messages)
+        {
+            var jsonResult = new JsonResult();
+            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+
+            if (ModelState.IsValid)
+            {
+                db.Entry(messages).State = EntityState.Modified;
+                await db.SaveChangesAsync();
+                jsonResult.Data = true;
+                return jsonResult;
+            }
+
+            jsonResult.Data = false;
+            return jsonResult;
+        }
+
+
+        // POST: Messages/Delete/5
+        [HttpPost, ActionName("Delete")]
+        //[ValidateAntiForgeryToken]
+        public async Task<ActionResult> DeleteConfirmed(int id)
+        {
+            var jsonResult = new JsonResult();
+            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+
+            Messages messages = await db.Messages.FindAsync(id);
+            if (messages != null)
+            {
+                db.Messages.Remove(messages);
+                await db.SaveChangesAsync();
+                jsonResult.Data = true;
+                return jsonResult;
+            }
+
+            jsonResult.Data = false;
+            return jsonResult;
         }
 
         protected override void Dispose(bool disposing)
@@ -110,11 +145,6 @@ namespace Server.Controllers
                 db.Dispose();
             }
             base.Dispose(disposing);
-        }
-
-        private bool MessagesExists(int id)
-        {
-            return db.Messages.Count(e => e.Id == id) > 0;
         }
     }
 }
