@@ -20,5 +20,7 @@ namespace Server.Models
         public virtual Users User { get; set; }
 
         public int UnreadedMessages { get; set; }
+        
+        public bool CanWrite { get; set; }
     }
 }

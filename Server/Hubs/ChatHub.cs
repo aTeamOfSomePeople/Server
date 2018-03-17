@@ -31,10 +31,11 @@ namespace Server.Hubs
             {
                 foreach (var us in ChatHub.users.Where(e => e.Value == user.Id))
                 {
-                    Groups.Add(us.Key, chat.Id.ToString());
+                    Groups.Add(us.Key, chat.Id.ToString()).Wait();
                 }
             }
             Clients.Group(chat.Id.ToString()).newChat(chat);
+            
         }
 
         public override Task OnDisconnected(bool stopCalled)
