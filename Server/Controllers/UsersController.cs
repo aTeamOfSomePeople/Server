@@ -16,12 +16,11 @@ namespace Server.Controllers
         private ServerContext db = new ServerContext();
 
         // GET: Users
-        public async Task<ActionResult> Index()
+        private async Task<ActionResult> Index()
         {
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
-
-            jsonResult.Data = await db.Users.ToListAsync();
+            jsonResult.Data = await db.Users.Select(z => new { Id = z.Id, Name = z.Name, Avatar = z.Avatar, IsDeleted = z.IsDeleted }).ToListAsync();
             
             return jsonResult;
         }
@@ -36,11 +35,7 @@ namespace Server.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Users users = await db.Users.FindAsync(id);
-            if (users != null)
-            {
-                users.Password = null;
-            }
+            var users = await db.Users.Select(z => new { Id = z.Id, Name = z.Name, Avatar = z.Avatar, IsDeleted = z.IsDeleted }).SingleOrDefaultAsync(e => e.Id == id);
             jsonResult.Data = users;
 
             return jsonResult;
@@ -52,51 +47,73 @@ namespace Server.Controllers
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
 
-            var user = await db.Users.SingleOrDefaultAsync(element => element.Login == login && element.Password == password);
+            var user = await db.Users.SingleOrDefaultAsync(element => !element.IsDeleted && (element.Login == login || element.Email == login) && element.Password == password);
 
-            if (user != null)
-            {
-                user.Password = null;
-            }
             jsonResult.Data = user;
 
             return jsonResult;
         }
 
         //GET: Users/FindUsers/"test"
-        public async Task<ActionResult> FindUsers(string Name)
+        public async Task<ActionResult> FindUsers(string Name, int? Start, int? Count)
         {
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
-
+            jsonResult.Data = null;
             if (Name == null)
             {
-                return await Index();
+                Name = "";
             }
-
-            var users = await db.Users.Where(e => e.Name.Contains(Name) || e.Login.Contains(Name)).ToListAsync();
-            users.ForEach(e => e.Password = null);
-            jsonResult.Data = users;
+            var users = await db.Users.Where(e => e.Name.Contains(Name)).ToListAsync();
+            if (users != null)
+            {
+                if (!Start.HasValue || Start.Value < 0)
+                {
+                    Start = 0;
+                }
+                if (Start.Value >= users.Count)
+                {
+                    return jsonResult;
+                }
+                if (!Count.HasValue || Count.Value <= 0)
+                {
+                    Count = users.Count;
+                }
+                Count = Math.Min(Count.Value, users.Count - Start.Value);
+                jsonResult.Data = users.GetRange(Start.Value, Count.Value);
+            }
 
             return jsonResult;
         }
         //GET: Users/ChatUsers/5
-        public async Task<ActionResult> ChatUsers(int? ChatId)
+        public async Task<ActionResult> ChatUsers(int? ChatId, int? Start, int? Count)
         {
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+            jsonResult.Data = null;
 
-            if (ChatId == null)
+            if (!ChatId.HasValue)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return jsonResult;
             }
-            var users = await db.Users.ToListAsync();//Join(db.UsersInChats, oKey => oKey.Id, iKey => iKey.UserId, (oKey, iKey) => new { oKey, iKey }).Where(element => element.iKey.Id == userId).Select(z => new { Id = z.oKey.Id, Name = z.oKey.Name, Email = z.oKey.Email, Login = z.oKey.Login, Password = z.oKey.Password, Avatar = z.oKey.Avatar }).ToListAsync();
-            if (users == null)
+            var users = await db.Users.Where(element => db.UsersInChats.Any(e => e.ChatId == ChatId && e.UserId == element.Id)).Select(z => new { Id = z.Id, Name = z.Name, Avatar = z.Avatar, IsDeleted = z.IsDeleted}).ToListAsync();
+            if (users != null)
             {
-                return HttpNotFound();
+                if (!Start.HasValue || Start.Value < 0)
+                {
+                    Start = 0;
+                }
+                if (Start.Value >= users.Count)
+                {
+                    return jsonResult;
+                }
+                if (!Count.HasValue || Count.Value <= 0)
+                {
+                    Count = users.Count;
+                }
+                Count = Math.Min(Count.Value, users.Count - Start.Value);
+                jsonResult.Data = users.GetRange(Start.Value, Count.Value);
             }
-
-            jsonResult.Data = users;
             return jsonResult;
         }
 
@@ -117,8 +134,8 @@ namespace Server.Controllers
                 jsonResult.Data = true;
                 return jsonResult;
             }
-
             jsonResult.Data = false;
+
             return jsonResult;
         }
 
@@ -127,20 +144,20 @@ namespace Server.Controllers
         // сведения см. в статье https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         //[ValidateAntiForgeryToken]
-        public async Task<ActionResult> Edit( Users users)
+        public async Task<ActionResult> Edit(Users users)
         {
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
 
-            if (ModelState.IsValid)
+            if (ModelState.IsValid && db.Users.Any(e => e.Login == users.Login && e.Password == users.Password))
             {
                 db.Entry(users).State = EntityState.Modified;
                 await db.SaveChangesAsync();
-                jsonResult.Data = true;
+                jsonResult.Data = users;
                 return jsonResult;
             }
-
             jsonResult.Data = false;
+
             return jsonResult;
         }
 
@@ -160,8 +177,8 @@ namespace Server.Controllers
                 jsonResult.Data = true;
                 return jsonResult;
             }
-
             jsonResult.Data = false;
+
             return jsonResult;
         }
 

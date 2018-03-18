@@ -16,35 +16,52 @@ namespace Server.Controllers
         private ServerContext db = new ServerContext();
 
         // GET: Attachments
-        public async Task<ActionResult> Index()
+        private async Task<ActionResult> Index()
         {
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
 
-            var attachments = await db.Attachments.ToListAsync();
-            attachments.ForEach(e => e.Message = null);
+            var attachments = await db.Attachments.Select(e => new { Id = e.Id, Link = e.Link, MessageId = e.MessageId }).ToListAsync();
             jsonResult.Data = attachments;
 
             return jsonResult;
         }
 
-        // GET: Attachments/Details/5
-        public async Task<ActionResult> Details(int? id)
+        //// GET: Attachments/Details/5
+        //public async Task<ActionResult> Details(int? id)
+        //{
+        //    var jsonResult = new JsonResult();
+        //    jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+
+        //    if (id == null)
+        //    {
+        //        return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+        //    }
+        //    var attachments = await db.Attachments.Select(e => new { Id = e.Id, Link = e.Link, MessageId = e.MessageId }).SingleOrDefaultAsync(e => e.Id == id);
+        //    if (attachments == null)
+        //    {
+        //        return HttpNotFound();
+        //    }
+        //    jsonResult.Data = attachments;
+
+        //    return jsonResult;
+        //}
+
+        public async Task<ActionResult> MessageAttachments(int? messageId)
         {
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+            jsonResult.Data = null;
 
-            if (id == null)
+            if (!messageId.HasValue)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return jsonResult;
             }
-            var attachments = await db.Attachments.FindAsync(id);
-            if (attachments == null)
+            var attachments = await db.Attachments.Select(e => new { Id = e.Id, Link = e.Link, MessageId = e.MessageId }).Where(e => e.MessageId == messageId).ToListAsync();
+            if (attachments != null)
             {
-                return HttpNotFound();
+                jsonResult.Data = attachments;
             }
-            attachments.Message = null;
-            jsonResult.Data = attachments;
 
             return jsonResult;
         }
@@ -85,7 +102,7 @@ namespace Server.Controllers
             {
                 db.Entry(attachments).State = EntityState.Modified;
                 await db.SaveChangesAsync();
-                jsonResult.Data = true;
+                jsonResult.Data = attachments;
                 return jsonResult;
             }
 

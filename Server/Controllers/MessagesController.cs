@@ -16,7 +16,7 @@ namespace Server.Controllers
         private ServerContext db = new ServerContext();
 
         // GET: Messages
-        public async Task<ActionResult> Index()
+        private async Task<ActionResult> Index()
         {
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
@@ -26,42 +26,54 @@ namespace Server.Controllers
             return jsonResult;
         }
 
-        // GET: Messages/Details/5
-        public async Task<ActionResult> Details(int? id)
+        //// GET: Messages/Details/5
+        //public async Task<ActionResult> Details(int? id)
+        //{
+        //    var jsonResult = new JsonResult();
+        //    jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+
+        //    if (id == null)
+        //    {
+        //        return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+        //    }
+        //    var messages = await db.Messages.Select(e => new { Id = e.Id, Text = e.Text, Date = e.Date, ChatId = e.ChatId, UserId = e.UserId, IsReader = e.IsReaded }).SingleOrDefaultAsync(e => e.Id == id);
+        //    if (messages == null)
+        //    {
+        //        return HttpNotFound();
+        //    }
+        //    jsonResult.Data = messages;
+
+        //    return jsonResult;
+        //}
+
+        public async Task<ActionResult> ChatMessages(int? ChatId, int? UserId, int? Start, int? Count)
         {
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+            jsonResult.Data = null;
 
-            if (id == null)
+            if (!ChatId.HasValue || !UserId.HasValue)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            var messages = db.Messages.Select(e => new { Id = e.Id, Text = e.Text, Date = e.Date, ChatId = e.ChatId, UserId = e.UserId, IsReader = e.IsReaded }).Where(e => e.Id == id).First();
-            if (messages == null)
-            {
-                return HttpNotFound();
-            }
-            jsonResult.Data = messages;
-
-            return jsonResult;
-        }
-
-        public async Task<ActionResult> ChatMessages(int? ChatId, int? UserId)
-        {
-            var jsonResult = new JsonResult();
-            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
-
-
-            if (ChatId == null || UserId == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return jsonResult;
             }
             var messages = await db.Messages.Select(e => new { Id = e.Id, Text = e.Text, Date = e.Date, ChatId = e.ChatId, UserId = e.UserId, IsReaded = e.IsReaded }).Where(z => z.ChatId == ChatId && !db.DeletedMessages.Any(e => e.UserId == UserId && e.MessageId == z.Id)).ToListAsync();
-            if (messages == null)
+            if (messages != null)
             {
-                return HttpNotFound();
+                if (!Start.HasValue || Start.Value < 0)
+                {
+                    Start = 0;
+                }
+                if (Start.Value >= messages.Count)
+                {
+                    return jsonResult;
+                }
+                if (!Count.HasValue || Count.Value <= 0)
+                {
+                    Count = messages.Count;
+                }
+                Count = Math.Min(Count.Value, messages.Count - Start.Value);
+                jsonResult.Data = messages.GetRange(Start.Value, Count.Value);
             }
-            jsonResult.Data = messages;
 
             return jsonResult;
         }
@@ -76,7 +88,7 @@ namespace Server.Controllers
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
 
-            if (ModelState.IsValid)
+            if (ModelState.IsValid && !db.Users.Any(e => e.IsDeleted && e.Id == messages.UserId) && db.UsersInChats.Any(e => e.ChatId == messages.ChatId && e.UserId == messages.UserId && e.CanWrite))
             {
                 messages.IsReaded = false;
                 messages.Date = DateTime.Now;
@@ -104,7 +116,7 @@ namespace Server.Controllers
             {
                 db.Entry(messages).State = EntityState.Modified;
                 await db.SaveChangesAsync();
-                jsonResult.Data = true;
+                jsonResult.Data = messages;
                 return jsonResult;
             }
 

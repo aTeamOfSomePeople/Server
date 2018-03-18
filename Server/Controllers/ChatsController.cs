@@ -16,7 +16,7 @@ namespace Server.Controllers
         private ServerContext db = new ServerContext();
 
         // GET: Chats
-        public async Task<ActionResult> Index()
+        private async Task<ActionResult> Index()
         {
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
@@ -25,43 +25,54 @@ namespace Server.Controllers
             return jsonResult;
         }
 
-        // GET: Chats/Details/5
-        public async Task<ActionResult> Details(int? id)
+        //// GET: Chats/Details/5
+        //public async Task<ActionResult> Details(int? id)
+        //{
+        //    var jsonResult = new JsonResult();
+        //    jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+
+        //    if (id == null)
+        //    {
+        //        return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+        //    }
+        //    var chats = await db.Chats.Select(e => new { Id = e.Id, Creator = e.Creator, Name = e.Name, Type = e.Type }).SingleOrDefaultAsync(e => e.Id == id);
+        //    if (chats == null)
+        //    {
+        //        return HttpNotFound();
+        //    }
+        //    jsonResult.Data = chats;
+
+        //    return jsonResult;
+        //}
+
+        public async Task<ActionResult> UserChats(int? UserId, int? Start, int? Count)
         {
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+            jsonResult.Data = null;
 
-            if (id == null)
+            if (!UserId.HasValue)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            var chats = db.Chats.Select(e => new { Id = e.Id, Creator = e.Creator, Name = e.Name, Type = e.Type }).Where(e => e.Id == id).First();
-            if (chats == null)
-            {
-                return HttpNotFound();
-            }
-            jsonResult.Data = chats;
-
-            return jsonResult;
-        }
-
-        public async Task<ActionResult> UserChats(int? UserId)
-        {
-            var jsonResult = new JsonResult();
-            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
-
-
-            if (UserId == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return jsonResult;
             }
             var chats = await db.Chats.Select(e => new { Id = e.Id, Creator = e.Creator, Name = e.Name, Type = e.Type }).Where(e =>  db.UsersInChats.Any(el => el.UserId == UserId && e.Id == el.ChatId)).ToListAsync();
-            if (chats == null)
+            if (chats != null)
             {
-                return HttpNotFound();
+                if (!Start.HasValue || Start.Value < 0)
+                {
+                    Start = 0;
+                }
+                if (Start.Value >= chats.Count)
+                {
+                    return jsonResult;
+                }
+                if (!Count.HasValue || Count.Value <= 0)
+                {
+                    Count = chats.Count;
+                }
+                Count = Math.Min(Count.Value, chats.Count - Start.Value);
+                jsonResult.Data = chats.GetRange(Start.Value, Count.Value);
             }
-            jsonResult.Data = chats;
-
             return jsonResult;
         }
 
@@ -70,12 +81,12 @@ namespace Server.Controllers
         // сведения см. в статье https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         //[ValidateAntiForgeryToken]
-        public async Task<ActionResult> Create( Chats chats)
+        public async Task<ActionResult> Create(Chats chats)
         {
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
 
-            if (ModelState.IsValid)
+            if (ModelState.IsValid && !db.Users.Any(e => e.IsDeleted && e.Id == chats.Creator))
             {
                 db.Chats.Add(chats);
                 await db.SaveChangesAsync();
@@ -92,7 +103,7 @@ namespace Server.Controllers
         // сведения см. в статье https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         //[ValidateAntiForgeryToken]
-        public async Task<ActionResult> Edit( Chats chats)
+        public async Task<ActionResult> Edit(Chats chats)
         {
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
@@ -101,7 +112,7 @@ namespace Server.Controllers
             {
                 db.Entry(chats).State = EntityState.Modified;
                 await db.SaveChangesAsync();
-                jsonResult.Data = true;
+                jsonResult.Data = chats;
                 return jsonResult;
             }
 

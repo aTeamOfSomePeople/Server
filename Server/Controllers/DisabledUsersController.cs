@@ -16,39 +16,36 @@ namespace Server.Controllers
         private ServerContext db = new ServerContext();
 
         // GET: DisabledUsers
-        public async Task<ActionResult> Index()
+        private async Task<ActionResult> Index()
         {
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
 
-            var disabledUsers = await db.DisabledUsers.ToListAsync();
-            disabledUsers.ForEach(e => { e.User1 = null; e.User2 = null; });
+            var disabledUsers = await db.DisabledUsers.Select(e => new { Id = e.Id, Banner = e.Banner, Banned = e.Banned, End = e.End}).ToListAsync();
             jsonResult.Data = disabledUsers;
 
             return jsonResult;
         }
 
-        // GET: DisabledUsers/Details/5
-        public async Task<ActionResult> Details(int? id)
-        {
-            var jsonResult = new JsonResult();
-            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+        //// GET: DisabledUsers/Details/5
+        //public async Task<ActionResult> Details(int? id)
+        //{
+        //    var jsonResult = new JsonResult();
+        //    jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
 
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            DisabledUsers disabledUsers = await db.DisabledUsers.FindAsync(id);
-            if (disabledUsers == null)
-            {
-                return HttpNotFound();
-            }
-            disabledUsers.User1 = null;
-            disabledUsers.User2 = null;
-            jsonResult.Data = disabledUsers;
+        //    if (id == null)
+        //    {
+        //        return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+        //    }
+        //    var disabledUsers = await db.DisabledUsers.Select(e => new { Id = e.Id, Banner = e.Banner, Banned = e.Banned, End = e.End }).SingleOrDefaultAsync(e => e.Id == id);
+        //    if (disabledUsers == null)
+        //    {
+        //        return HttpNotFound();
+        //    }
+        //    jsonResult.Data = disabledUsers;
 
-            return jsonResult;
-        }
+        //    return jsonResult;
+        //}
 
         // POST: DisabledUsers/Create
         // Чтобы защититься от атак чрезмерной передачи данных, включите определенные свойства, для которых следует установить привязку. Дополнительные 
@@ -86,7 +83,7 @@ namespace Server.Controllers
             {
                 db.Entry(disabledUsers).State = EntityState.Modified;
                 await db.SaveChangesAsync();
-                jsonResult.Data = true;
+                jsonResult.Data = disabledUsers;
                 return jsonResult;
             }
 

@@ -16,40 +16,37 @@ namespace Server.Controllers
         private ServerContext db = new ServerContext();
 
         // GET: UsersInChats
-        public async Task<ActionResult> Index()
+        private async Task<ActionResult> Index()
         {
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
 
-            var usersInChats = await db.UsersInChats.ToListAsync();
-            usersInChats.ForEach(e => { e.Chat = null; e.User = null;});
+            var usersInChats = await db.UsersInChats.Select(e => new { Id = e.Id, UserId = e.UserId, ChatId = e.ChatId, CanWrite = e.CanWrite, UnreadedMessages = e.UnreadedMessages}).ToListAsync();
             jsonResult.Data = usersInChats;
 
             return jsonResult;
         }
 
-        // GET: UsersInChats/Details/5
-        public async Task<ActionResult> Details(int? id)
-        {
-            var jsonResult = new JsonResult();
-            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+        //// GET: UsersInChats/Details/5
+        //public async Task<ActionResult> Details(int? id)
+        //{
+        //    var jsonResult = new JsonResult();
+        //    jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
 
 
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            UsersInChats usersInChats = await db.UsersInChats.FindAsync(id);
-            if (usersInChats == null)
-            {
-                return HttpNotFound();
-            }
-            usersInChats.Chat = null;
-            usersInChats.User = null;
-            jsonResult.Data = usersInChats;
+        //    if (id == null)
+        //    {
+        //        return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+        //    }
+        //    var usersInChats = await db.UsersInChats.Select(e => new { Id = e.Id, UserId = e.UserId, ChatId = e.ChatId, CanWrite = e.CanWrite, UnreadedMessages = e.UnreadedMessages }).SingleOrDefaultAsync(e => e.Id == id);
+        //    if (usersInChats == null)
+        //    {
+        //        return HttpNotFound();
+        //    }
+        //    jsonResult.Data = usersInChats;
 
-            return jsonResult;
-        }
+        //    return jsonResult;
+        //}
 
         // POST: UsersInChats/Create
         // Чтобы защититься от атак чрезмерной передачи данных, включите определенные свойства, для которых следует установить привязку. Дополнительные 
@@ -87,7 +84,7 @@ namespace Server.Controllers
             {
                 db.Entry(usersInChats).State = EntityState.Modified;
                 await db.SaveChangesAsync();
-                jsonResult.Data = true;
+                jsonResult.Data = usersInChats;
                 return jsonResult;
             }
 
@@ -98,12 +95,12 @@ namespace Server.Controllers
         // POST: UsersInChats/Delete/5
         [HttpPost, ActionName("Delete")]
         //[ValidateAntiForgeryToken]
-        public async Task<ActionResult> Delete(int id)
+        public async Task<ActionResult> Delete(string login, string password, int chatId)
         {
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
 
-            UsersInChats usersInChats = await db.UsersInChats.FindAsync(id);
+            UsersInChats usersInChats = await db.UsersInChats.SingleOrDefaultAsync(e => e.ChatId == chatId && db.Users.SingleOrDefault(z => z.Login == login && z.Password == password).Id == e.UserId);
             if (usersInChats != null)
             {
                 db.UsersInChats.Remove(usersInChats);

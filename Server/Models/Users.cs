@@ -24,5 +24,7 @@ namespace Server.Models
         public string Password { get; set; }
 
         public string Avatar { get; set; }
+
+        public bool IsDeleted { get; set; }
     }   
 }

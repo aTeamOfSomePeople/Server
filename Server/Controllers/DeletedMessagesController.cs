@@ -16,39 +16,36 @@ namespace Server.Controllers
         private ServerContext db = new ServerContext();
 
         // GET: DeletedMessages
-        public async Task<ActionResult> Index()
+        private async Task<ActionResult> Index()
         {
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
 
-            var deletedMessages = await db.DeletedMessages.ToListAsync();
-            deletedMessages.ForEach(e => { e.Message = null; e.User = null; });
+            var deletedMessages = await db.DeletedMessages.Select(e => new { Id = e.Id, MessageId = e.MessageId, UserId = e.UserId}).ToListAsync();
             jsonResult.Data = deletedMessages;
 
             return jsonResult;
         }
 
-        // GET: DeletedMessages/Details/5
-        public async Task<ActionResult> Details(int? id)
-        {
-            var jsonResult = new JsonResult();
-            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+        //// GET: DeletedMessages/Details/5
+        //public async Task<ActionResult> Details(int? id)
+        //{
+        //    var jsonResult = new JsonResult();
+        //    jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
 
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            DeletedMessages deletedMessages = await db.DeletedMessages.FindAsync(id);
-            if (deletedMessages == null)
-            {
-                return HttpNotFound();
-            }
-            deletedMessages.User = null;
-            deletedMessages.Message = null;
-            jsonResult.Data = deletedMessages;
+        //    if (id == null)
+        //    {
+        //        return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+        //    }
+        //    var deletedMessages = await db.DeletedMessages.Select(e => new { Id = e.Id, MessageId = e.MessageId, UserId = e.UserId }).SingleOrDefaultAsync(e => e.Id == id);
+        //    if (deletedMessages == null)
+        //    {
+        //        return HttpNotFound();
+        //    }
+        //    jsonResult.Data = deletedMessages;
 
-            return jsonResult;
-        }
+        //    return jsonResult;
+        //}
 
         // POST: DeletedMessages/Create
         // Чтобы защититься от атак чрезмерной передачи данных, включите определенные свойства, для которых следует установить привязку. Дополнительные 
@@ -60,7 +57,7 @@ namespace Server.Controllers
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
 
-            if (ModelState.IsValid)
+            if (ModelState.IsValid && db.UsersInChats.Any(e => e.UserId == deletedMessages.UserId && db.Messages.SingleOrDefault(z => z.Id == deletedMessages.MessageId).ChatId == e.ChatId))
             {
                 db.DeletedMessages.Add(deletedMessages);
                 await db.SaveChangesAsync();
@@ -86,7 +83,7 @@ namespace Server.Controllers
             {
                 db.Entry(deletedMessages).State = EntityState.Modified;
                 await db.SaveChangesAsync();
-                jsonResult.Data = true;
+                jsonResult.Data = deletedMessages;
                 return jsonResult;
             }
 
