@@ -45,6 +45,40 @@ namespace Server.Controllers
         //    return jsonResult;
         //}
 
+        public async Task<ActionResult> FindPublics(string name, int? start, int? count)
+        {
+            var jsonResult = new JsonResult();
+            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+            jsonResult.Data = null;
+
+            if (name == null)
+            {
+                return jsonResult;
+            }
+
+            var publics = await db.Chats.Where(e => e.Type == "Public" && e.Name.Contains(name)).ToListAsync();
+
+            if (publics != null)
+            {
+                if (!start.HasValue || start.Value < 0)
+                {
+                    start = 0;
+                }
+                if (start.Value >= publics.Count)
+                {
+                    return jsonResult;
+                }
+                if (!count.HasValue || count.Value <= 0)
+                {
+                    count = publics.Count;
+                }
+                count = Math.Min(Math.Min(count.Value, publics.Count - start.Value), 100);
+                jsonResult.Data = publics.GetRange(start.Value, count.Value);
+            }
+
+            return jsonResult;
+        }
+
         public async Task<ActionResult> UserChats(int? UserId, int? Start, int? Count)
         {
             var jsonResult = new JsonResult();
@@ -147,14 +181,16 @@ namespace Server.Controllers
         // POST: Chats/Delete/5
         [HttpPost, ActionName("Delete")]
         //[ValidateAntiForgeryToken]
-        public async Task<ActionResult> Delete(int id)
+        public async Task<ActionResult> Delete(int? chatId, string login, string password)
         {
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+            jsonResult.Data = false;
 
-            Chats chats = await db.Chats.FindAsync(id);
+            var chats = await db.Chats.FirstOrDefaultAsync(e => e.Id == chatId && db.Users.FirstOrDefault(z => z.Login == login && z.Password == password).Id == e.Creator);
             if (chats != null)
             {
+                db.UsersInChats.RemoveRange(await db.UsersInChats.Where(e => e.ChatId == chats.Id).ToListAsync());
                 db.Chats.Remove(chats);
                 await db.SaveChangesAsync();
                 jsonResult.Data = true;

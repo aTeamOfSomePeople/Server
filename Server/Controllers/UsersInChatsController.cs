@@ -95,12 +95,19 @@ namespace Server.Controllers
         // POST: UsersInChats/Delete/5
         [HttpPost, ActionName("Delete")]
         //[ValidateAntiForgeryToken]
-        public async Task<ActionResult> Delete(string login, string password, int chatId)
+        public async Task<ActionResult> Delete(string login, string password, int? chatId, int? userId)
         {
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+            jsonResult.Data = false;
 
-            UsersInChats usersInChats = await db.UsersInChats.SingleOrDefaultAsync(e => e.ChatId == chatId && db.Users.SingleOrDefault(z => z.Login == login && z.Password == password).Id == e.UserId);
+            if (!chatId.HasValue || !userId.HasValue || login == null || password == null)
+            {
+                return jsonResult;
+            }
+
+            UsersInChats usersInChats = await db.UsersInChats.FirstOrDefaultAsync(e => e.ChatId == chatId && (db.Users.FirstOrDefault(z => z.Login == login && z.Password == password).Id == db.Chats.FirstOrDefault(z => z.Id == chatId).Creator) || (db.Users.FirstOrDefault(z => z.Login == login && z.Password == password).Id == userId));
+
             if (usersInChats != null)
             {
                 db.UsersInChats.Remove(usersInChats);
