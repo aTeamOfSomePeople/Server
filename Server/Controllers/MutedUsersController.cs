@@ -11,23 +11,23 @@ using Server.Models;
 
 namespace Server.Controllers
 {
-    public class AttachmentsController : Controller
+    public class MutedUsersController : Controller
     {
         private ServerContext db = new ServerContext();
 
-        // GET: Attachments
+        // GET: MutedUsers
         private async Task<ActionResult> Index()
         {
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
 
-            var attachments = await db.Attachments.Select(e => new { Id = e.Id, Link = e.Link, MessageId = e.MessageId, FileSize = e.FileSize, CDNId = e.CDNId }).ToListAsync();
-            jsonResult.Data = attachments;
+            var mutedUsers = await db.MutedUsers.Select(e => new { Id = e.Id, UserId = e.UserId, ChatId = e.ChatId, End = e.End}).ToListAsync();
+            jsonResult.Data = mutedUsers;
 
             return jsonResult;
         }
 
-        //// GET: Attachments/Details/5
+        //// GET: MutedUsers/Details/5
         //public async Task<ActionResult> Details(int? id)
         //{
         //    var jsonResult = new JsonResult();
@@ -37,49 +37,31 @@ namespace Server.Controllers
         //    {
         //        return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
         //    }
-        //    var attachments = await db.Attachments.Select(e => new { Id = e.Id, Link = e.Link, MessageId = e.MessageId, FileSize = e.FileSize, CDNId = e.CDNId }).FirstOrDefaultAsync(e => e.Id == id);
-        //    if (attachments == null)
+        //    var mutedUsers = await db.MutedUsers.Select(e => new { Id = e.Id, UserId = e.UserId, ChatId = e.ChatId, End = e.End}).SingleOrDefaultAsync(e => e.Id == id);
+        //    if (mutedUsers == null)
         //    {
         //        return HttpNotFound();
         //    }
-        //    jsonResult.Data = attachments;
+        //    jsonResult.Data = mutedUsers;
 
         //    return jsonResult;
         //}
 
-        public async Task<ActionResult> MessageAttachments(int? messageId)
-        {
-            var jsonResult = new JsonResult();
-            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
-            jsonResult.Data = null;
-            if (!messageId.HasValue)
-            {
-                return jsonResult;
-            }
-            var attachments = await db.Attachments.Select(e => new { Id = e.Id, Link = e.Link, MessageId = e.MessageId, FileSize = e.FileSize, CDNId = e.CDNId }).Where(e => e.MessageId == messageId).ToListAsync();
-            if (attachments != null)
-            {
-                jsonResult.Data = attachments;
-            }
-
-            return jsonResult;
-        }
-
-        // POST: Attachments/Create
+        // POST: MutedUsers/Create
         // Чтобы защититься от атак чрезмерной передачи данных, включите определенные свойства, для которых следует установить привязку. Дополнительные 
         // сведения см. в статье https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         //[ValidateAntiForgeryToken]
-        public async Task<ActionResult> Create(Attachments attachments)
+        public async Task<ActionResult> Create(MutedUsers mutedUsers)
         {
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
 
             if (ModelState.IsValid)
             {
-                db.Attachments.Add(attachments);
+                db.MutedUsers.Add(mutedUsers);
                 await db.SaveChangesAsync();
-                jsonResult.Data = attachments;
+                jsonResult.Data = mutedUsers;
                 return jsonResult;
             }
 
@@ -87,21 +69,21 @@ namespace Server.Controllers
             return jsonResult;
         }
 
-        // POST: Attachments/Edit/5
+        // POST: MutedUsers/Edit/5
         // Чтобы защититься от атак чрезмерной передачи данных, включите определенные свойства, для которых следует установить привязку. Дополнительные 
         // сведения см. в статье https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         //[ValidateAntiForgeryToken]
-        public async Task<ActionResult> Edit(Attachments attachments)
+        public async Task<ActionResult> Edit(MutedUsers mutedUsers)
         {
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
 
             if (ModelState.IsValid)
             {
-                db.Entry(attachments).State = EntityState.Modified;
+                db.Entry(mutedUsers).State = EntityState.Modified;
                 await db.SaveChangesAsync();
-                jsonResult.Data = attachments;
+                jsonResult.Data = mutedUsers;
                 return jsonResult;
             }
 
@@ -109,18 +91,24 @@ namespace Server.Controllers
             return jsonResult;
         }
 
-        // POST: Attachments/Delete/5
+        // POST: MutedUsers/Delete/5
         [HttpPost, ActionName("Delete")]
         //[ValidateAntiForgeryToken]
-        public async Task<ActionResult> Delete(int id)
+        public async Task<ActionResult> Delete(int? userId, int? chatId)
         {
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+            jsonResult.Data = false;
 
-            Attachments attachments = await db.Attachments.FindAsync(id);
-            if (attachments != null)
+            if (!userId.HasValue || !chatId.HasValue)
             {
-                db.Attachments.Remove(attachments);
+                return jsonResult;
+            }
+
+            MutedUsers mutedUsers = await db.MutedUsers.Where(e => e.UserId == userId && e.ChatId == chatId).FirstOrDefaultAsync();
+            if (mutedUsers != null)
+            {
+                db.MutedUsers.Remove(mutedUsers);
                 await db.SaveChangesAsync();
                 jsonResult.Data = true;
                 return jsonResult;

@@ -35,7 +35,7 @@ namespace Server.Controllers
         //    {
         //        return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
         //    }
-        //    var chats = await db.Chats.Select(e => new { Id = e.Id, Creator = e.Creator, Name = e.Name, Type = e.Type }).SingleOrDefaultAsync(e => e.Id == id);
+        //    var chats = await db.Chats.Select(e => new { Id = e.Id, Creator = e.Creator, Name = e.Name, Type = e.Type }).FirstOrDefaultAsync(e => e.Id == id);
         //    if (chats == null)
         //    {
         //        return HttpNotFound();
@@ -58,6 +58,30 @@ namespace Server.Controllers
             var chats = await db.Chats.Select(e => new { Id = e.Id, Creator = e.Creator, Name = e.Name, Type = e.Type }).Where(e =>  db.UsersInChats.Any(el => el.UserId == UserId && e.Id == el.ChatId)).ToListAsync();
             if (chats != null)
             {
+                chats.Sort((first, second) =>
+                {
+                    var a = db.Messages.Where(e => e.ChatId == first.Id).ToList().LastOrDefault();
+                    var b = db.Messages.Where(e => e.ChatId == second.Id).ToList().LastOrDefault();
+                    if (a == b)
+                    {
+                        return 0;
+                    }
+                    if (a == null)
+                    {
+                        return 1;
+                    }
+                    else if (b == null)
+                    {
+                        return -1;
+                    }
+                    if (a.Date > b.Date)
+                    {
+                        return -1;
+                    }
+
+                    return 1;
+                });
+                //chats.Sort((a, b) => db.Messages.Any(e => e.ChatId == a.Id) != db.Messages.Any(e => e.ChatId == b.Id) && db.Messages.Any(e => e.ChatId == a.Id) ? -1 : db.Messages.Any(e => e.ChatId == a.Id) != db.Messages.Any(e => e.ChatId == b.Id) && db.Messages.Any(e => e.ChatId == b.Id) ? 1 : db.Messages.Any(e => e.ChatId == a.Id) && db.Messages.Where(e => e.ChatId == a.Id).Last().Date > db.Messages.Where(e => e.ChatId == b.Id).Last().Date ? 1 : db.Messages.Any(e => e.ChatId == a.Id) && db.Messages.Where(e => e.ChatId == a.Id).Last().Date < db.Messages.Where(e => e.ChatId == b.Id).Last().Date ? -1 : 0);
                 if (!Start.HasValue || Start.Value < 0)
                 {
                     Start = 0;
@@ -70,7 +94,7 @@ namespace Server.Controllers
                 {
                     Count = chats.Count;
                 }
-                Count = Math.Min(Count.Value, chats.Count - Start.Value);
+                Count = Math.Min(Math.Min(Count.Value, chats.Count - Start.Value), 100);
                 jsonResult.Data = chats.GetRange(Start.Value, Count.Value);
             }
             return jsonResult;

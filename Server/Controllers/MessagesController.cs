@@ -36,7 +36,7 @@ namespace Server.Controllers
         //    {
         //        return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
         //    }
-        //    var messages = await db.Messages.Select(e => new { Id = e.Id, Text = e.Text, Date = e.Date, ChatId = e.ChatId, UserId = e.UserId, IsReader = e.IsReaded }).SingleOrDefaultAsync(e => e.Id == id);
+        //    var messages = await db.Messages.Select(e => new { Id = e.Id, Text = e.Text, Date = e.Date, ChatId = e.ChatId, UserId = e.UserId, IsReader = e.IsReaded }).FirstOrDefaultAsync(e => e.Id == id);
         //    if (messages == null)
         //    {
         //        return HttpNotFound();
@@ -59,6 +59,7 @@ namespace Server.Controllers
             var messages = await db.Messages.Select(e => new { Id = e.Id, Text = e.Text, Date = e.Date, ChatId = e.ChatId, UserId = e.UserId, IsReaded = e.IsReaded }).Where(z => z.ChatId == ChatId && !db.DeletedMessages.Any(e => e.UserId == UserId && e.MessageId == z.Id)).ToListAsync();
             if (messages != null)
             {
+                
                 if (!Start.HasValue || Start.Value < 0)
                 {
                     Start = 0;
@@ -71,8 +72,11 @@ namespace Server.Controllers
                 {
                     Count = messages.Count;
                 }
-                Count = Math.Min(Count.Value, messages.Count - Start.Value);
-                jsonResult.Data = messages.GetRange(Start.Value, Count.Value);
+                Count = Math.Min(Math.Min(Count.Value, messages.Count - Start.Value), 100);
+                Start = messages.Count - Count - Start;
+                messages = messages.GetRange(Start.Value, Count.Value);
+                messages.Reverse();
+                jsonResult.Data = messages;
             }
 
             return jsonResult;
@@ -128,16 +132,27 @@ namespace Server.Controllers
         // POST: Messages/Delete/5
         [HttpPost, ActionName("Delete")]
         //[ValidateAntiForgeryToken]
-        public async Task<ActionResult> DeleteConfirmed(int id)
+        public async Task<ActionResult> Delete(int id, int chatId, string userLogin, string userPassword)
         {
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
 
-            Messages messages = await db.Messages.FindAsync(id);
+            Messages messages = await db.Messages.FirstOrDefaultAsync(e => e.Id == id && db.UsersInChats.Any(z => z.ChatId == chatId));
             if (messages != null)
             {
                 db.Messages.Remove(messages);
                 await db.SaveChangesAsync();
+                var cdnClient = (new ZeroCdnClients.CdnClientsFactory(Resource.ZeroCDNUsername, Resource.ZeroCDNKey)).Files;
+                var attachments = await db.Attachments.Where(e => e.MessageId == id).ToListAsync();
+                try
+                {
+                    foreach (var attachment in attachments)
+                    {
+                        await cdnClient.Remove(attachment.CDNId);
+                    }
+                }
+                catch { }
+                db.Attachments.RemoveRange(attachments);
                 jsonResult.Data = true;
                 return jsonResult;
             }

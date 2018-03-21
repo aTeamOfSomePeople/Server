@@ -17,5 +17,9 @@ namespace Server.Models
         [Required, ForeignKey("Message")]
         public int MessageId { get; set; }
         public virtual Messages Message { get; set; }
+
+        public long FileSize { get; set; }
+
+        public long CDNId { get; set; }
     }
 }

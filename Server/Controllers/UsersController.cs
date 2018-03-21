@@ -30,12 +30,13 @@ namespace Server.Controllers
         {
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+            jsonResult.Data = null;
 
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return jsonResult;
             }
-            var users = await db.Users.Select(z => new { Id = z.Id, Name = z.Name, Avatar = z.Avatar, IsDeleted = z.IsDeleted }).SingleOrDefaultAsync(e => e.Id == id);
+            var users = await db.Users.Select(z => new { Id = z.Id, Name = z.Name, Avatar = z.Avatar, IsDeleted = z.IsDeleted }).FirstOrDefaultAsync(e => e.Id == id);
             jsonResult.Data = users;
 
             return jsonResult;
@@ -47,7 +48,7 @@ namespace Server.Controllers
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
 
-            var user = await db.Users.SingleOrDefaultAsync(element => !element.IsDeleted && (element.Login == login || element.Email == login) && element.Password == password);
+            var user = await db.Users.FirstOrDefaultAsync(element => !element.IsDeleted && (element.Login == login || element.Email == login) && element.Password == password);
 
             jsonResult.Data = user;
 
@@ -79,7 +80,7 @@ namespace Server.Controllers
                 {
                     Count = users.Count;
                 }
-                Count = Math.Min(Count.Value, users.Count - Start.Value);
+                Count = Math.Min(Math.Min(Count.Value, users.Count - Start.Value), 100);
                 jsonResult.Data = users.GetRange(Start.Value, Count.Value);
             }
 
@@ -111,7 +112,7 @@ namespace Server.Controllers
                 {
                     Count = users.Count;
                 }
-                Count = Math.Min(Count.Value, users.Count - Start.Value);
+                Count = Math.Min(Math.Min(Count.Value, users.Count - Start.Value), 100);
                 jsonResult.Data = users.GetRange(Start.Value, Count.Value);
             }
             return jsonResult;
@@ -144,16 +145,16 @@ namespace Server.Controllers
         // сведения см. в статье https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         //[ValidateAntiForgeryToken]
-        public async Task<ActionResult> Edit(Users users)
+        public async Task<ActionResult> Edit(Users users, string oldPassword)
         {
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
-
-            if (ModelState.IsValid && db.Users.Any(e => e.Login == users.Login && e.Password == users.Password))
+            var pass = oldPassword == null ? users.Password : oldPassword;
+            if (ModelState.IsValid && db.Users.Any(e => e.Login == users.Login && e.Password == pass))
             {
                 db.Entry(users).State = EntityState.Modified;
                 await db.SaveChangesAsync();
-                jsonResult.Data = users;
+                jsonResult.Data = true;
                 return jsonResult;
             }
             jsonResult.Data = false;

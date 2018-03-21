@@ -36,8 +36,10 @@ namespace Server.Models
 
         public System.Data.Entity.DbSet<Server.Models.UsersInChats> UsersInChats { get; set; }
         
-        public System.Data.Entity.DbSet<Server.Models.DisabledUsers> DisabledUsers { get; set; }
+        public System.Data.Entity.DbSet<Server.Models.MutedUsers> MutedUsers { get; set; }
 
         public System.Data.Entity.DbSet<Server.Models.DeletedMessages> DeletedMessages { get; set; }
+
+        public System.Data.Entity.DbSet<Server.Models.BannedUsers> BannedUsers { get; set; }
     }
 }
