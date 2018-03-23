@@ -20,5 +20,7 @@ namespace Server.Models
 
         [Required]
         public string Type { get; set; }
+
+        public string Avatar { get; set; }
     }
 }
