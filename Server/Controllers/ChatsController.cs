@@ -20,7 +20,7 @@ namespace Server.Controllers
         {
             var jsonResult = new JsonResult();
             jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
-            jsonResult.Data = await db.Chats.Select(e => new { Id = e.Id, Creator = e.Creator, Name = e.Name, Type = e.Type }).ToListAsync();
+            jsonResult.Data = await db.Chats.Select(e => new { Id = e.Id, Creator = e.Creator, Name = e.Name, Type = e.Type, Avatar = e.Avatar }).ToListAsync();
 
             return jsonResult;
         }
@@ -56,7 +56,7 @@ namespace Server.Controllers
                 return jsonResult;
             }
 
-            var publics = await db.Chats.Where(e => e.Type == "Public" && e.Name.Contains(name)).ToListAsync();
+            var publics = await db.Chats.Where(e => e.Type.ToLower() == "public" && e.Name.Contains(name)).Select(e => new { Id = e.Id, Creator = e.Creator, Name = e.Name, Type = e.Type, Avatar = e.Avatar }).ToListAsync();
 
             if (publics != null)
             {
@@ -89,7 +89,7 @@ namespace Server.Controllers
             {
                 return jsonResult;
             }
-            var chats = await db.Chats.Select(e => new { Id = e.Id, Creator = e.Creator, Name = e.Name, Type = e.Type }).Where(e =>  db.UsersInChats.Any(el => el.UserId == UserId && e.Id == el.ChatId)).ToListAsync();
+            var chats = await db.Chats.Select(e => new { Id = e.Id, Creator = e.Creator, Name = e.Name, Type = e.Type, Avatar = e.Avatar }).Where(e =>  db.UsersInChats.Any(el => el.UserId == UserId && e.Id == el.ChatId)).ToListAsync();
             if (chats != null)
             {
                 chats.Sort((first, second) =>
