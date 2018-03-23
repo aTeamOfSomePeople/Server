@@ -56,7 +56,7 @@ namespace Server.Controllers
                 return jsonResult;
             }
 
-            var publics = await db.Chats.Where(e => e.Type.ToLower() == "public" && e.Name.Contains(name)).Select(e => new { Id = e.Id, Creator = e.Creator, Name = e.Name, Type = e.Type, Avatar = e.Avatar }).ToListAsync();
+            var publics = await db.Chats.Where(e => e.Type.ToLower() == "public" && e.Name.ToLower().Contains(name.ToLower())).Select(e => new { Id = e.Id, Creator = e.Creator, Name = e.Name, Type = e.Type, Avatar = e.Avatar }).ToListAsync();
 
             if (publics != null)
             {
