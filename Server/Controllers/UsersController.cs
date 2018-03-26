@@ -25,6 +25,24 @@ namespace Server.Controllers
             return jsonResult;
         }
 
+        public async Task<ActionResult> Authorization(string login, string password)
+        {
+            var jsonResult = new JsonResult();
+            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+
+            if (String.IsNullOrWhiteSpace(login) || String.IsNullOrWhiteSpace(password))
+            {
+                jsonResult.Data = new Utils.ErrorMessage(1, "Login or password is absent");
+                return jsonResult;
+            }
+            var user = await db.Users.Where(e => e.Login == login && e.Password == password).FirstOrDefaultAsync();
+            if (user != null)
+            {
+                jsonResult.Data = new Utils.AuthorizeResponse("", "", user.Id);
+            }
+            return jsonResult;
+        }
+
         // GET: Users/Details/5
         public async Task<ActionResult> Details(int? id)
         {
