@@ -41,5 +41,13 @@ namespace Server.Models
         public System.Data.Entity.DbSet<Server.Models.DeletedMessages> DeletedMessages { get; set; }
 
         public System.Data.Entity.DbSet<Server.Models.BannedUsers> BannedUsers { get; set; }
+
+        public System.Data.Entity.DbSet<Server.Models.ExternalServices> Services { get; set; }
+
+        public System.Data.Entity.DbSet<Server.Models.Accounts> Accounts { get; set; }
+
+        public System.Data.Entity.DbSet<Server.Models.ExternalAccounts> ExternalAccounts { get; set; }
+
+        public System.Data.Entity.DbSet<Server.Models.Tokens> Tokens { get; set; }
     }
 }

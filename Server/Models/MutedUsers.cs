@@ -9,14 +9,14 @@ namespace Server.Models
 {
     public class MutedUsers
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
 
         [Required, ForeignKey("Users"), Index("User", IsUnique = true, Order = 1)]
-        public int UserId { get; set; }
+        public long UserId { get; set; }
         public virtual Users Users { get; set; }
 
         [Required, ForeignKey("Chats"), Index("User", IsUnique = true, Order = 2)]
-        public int ChatId { get; set; }
+        public long ChatId { get; set; }
         public virtual Chats Chats { get; set; }
 
         public DateTime End { get; set; }

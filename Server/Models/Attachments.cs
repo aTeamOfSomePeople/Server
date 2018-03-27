@@ -9,13 +9,13 @@ namespace Server.Models
 {
     public class Attachments
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
 
         [Required]
         public string Link { get; set; }
 
         [Required, ForeignKey("Message")]
-        public int MessageId { get; set; }
+        public long MessageId { get; set; }
         public virtual Messages Message { get; set; }
 
         public long FileSize { get; set; }

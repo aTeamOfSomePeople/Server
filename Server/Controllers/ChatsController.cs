@@ -137,24 +137,24 @@ namespace Server.Controllers
         // POST: Chats/Create
         // Чтобы защититься от атак чрезмерной передачи данных, включите определенные свойства, для которых следует установить привязку. Дополнительные 
         // сведения см. в статье https://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        //[ValidateAntiForgeryToken]
-        public async Task<ActionResult> Create(Chats chats)
-        {
-            var jsonResult = new JsonResult();
-            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+        //[HttpPost]
+        ////[ValidateAntiForgeryToken]
+        //public async Task<ActionResult> Create(Chats chats)
+        //{
+        //    var jsonResult = new JsonResult();
+        //    jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
 
-            if (ModelState.IsValid && !db.Users.Any(e => e.IsDeleted && e.Id == chats.Creator))
-            {
-                db.Chats.Add(chats);
-                await db.SaveChangesAsync();
-                jsonResult.Data = chats;
-                return jsonResult;
-            }
+        //    if (ModelState.IsValid && !db.Users.Any(e => e.IsDeleted && e.Id == chats.Creator))
+        //    {
+        //        db.Chats.Add(chats);
+        //        await db.SaveChangesAsync();
+        //        jsonResult.Data = chats;
+        //        return jsonResult;
+        //    }
 
-            jsonResult.Data = null;
-            return jsonResult;
-        }
+        //    jsonResult.Data = null;
+        //    return jsonResult;
+        //}
 
         // POST: Chats/Edit/5
         // Чтобы защититься от атак чрезмерной передачи данных, включите определенные свойства, для которых следует установить привязку. Дополнительные 
@@ -178,28 +178,28 @@ namespace Server.Controllers
             return jsonResult;
         }
 
-        // POST: Chats/Delete/5
-        [HttpPost, ActionName("Delete")]
-        //[ValidateAntiForgeryToken]
-        public async Task<ActionResult> Delete(int? chatId, string login, string password)
-        {
-            var jsonResult = new JsonResult();
-            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
-            jsonResult.Data = false;
+        //// POST: Chats/Delete/5
+        //[HttpPost, ActionName("Delete")]
+        ////[ValidateAntiForgeryToken]
+        //public async Task<ActionResult> Delete(int? chatId, string login, string password)
+        //{
+        //    var jsonResult = new JsonResult();
+        //    jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+        //    jsonResult.Data = false;
 
-            var chats = await db.Chats.FirstOrDefaultAsync(e => e.Id == chatId && db.Users.FirstOrDefault(z => z.Login == login && z.Password == password).Id == e.Creator);
-            if (chats != null)
-            {
-                db.UsersInChats.RemoveRange(await db.UsersInChats.Where(e => e.ChatId == chats.Id).ToListAsync());
-                db.Chats.Remove(chats);
-                await db.SaveChangesAsync();
-                jsonResult.Data = true;
-                return jsonResult;
-            }
+        //    var chats = await db.Chats.FirstOrDefaultAsync(e => e.Id == chatId && db.Users.FirstOrDefault(z => z.Login == login && z.Password == password).Id == e.Creator);
+        //    if (chats != null)
+        //    {
+        //        db.UsersInChats.RemoveRange(await db.UsersInChats.Where(e => e.ChatId == chats.Id).ToListAsync());
+        //        db.Chats.Remove(chats);
+        //        await db.SaveChangesAsync();
+        //        jsonResult.Data = true;
+        //        return jsonResult;
+        //    }
 
-            jsonResult.Data = false;
-            return jsonResult;
-        }
+        //    jsonResult.Data = false;
+        //    return jsonResult;
+        //}
 
         protected override void Dispose(bool disposing)
         {

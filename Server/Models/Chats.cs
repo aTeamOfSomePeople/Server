@@ -9,10 +9,10 @@ namespace Server.Models
 {
     public class Chats
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
 
         [Required, ForeignKey("User")]
-        public int Creator { get; set; }
+        public long Creator { get; set; }
         public virtual Users User { get; set; }
 
         [Required]

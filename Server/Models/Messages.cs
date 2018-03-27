@@ -9,7 +9,7 @@ namespace Server.Models
 {
     public class Messages
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
 
         [Required]
         public string Text { get; set; }
@@ -18,11 +18,11 @@ namespace Server.Models
         public DateTime Date { get; set; }
 
         [Required, ForeignKey("Chat")]
-        public int ChatId { get; set; }
+        public long ChatId { get; set; }
         public virtual Chats Chat { get; set; }
 
         [Required, ForeignKey("User")]
-        public int UserId { get; set; }
+        public long UserId { get; set; }
         public virtual Users User { get; set; }
 
         public bool IsReaded { get; set; }

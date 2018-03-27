@@ -9,14 +9,14 @@ namespace Server.Models
 {
     public class UsersInChats
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
 
         [Required, ForeignKey("Chat"), Index("ChatUser", IsUnique = true, Order = 1)]
-        public int ChatId { get; set; }
+        public long ChatId { get; set; }
         public virtual Chats Chat {get; set;}
 
         [Required, ForeignKey("User"), Index("ChatUser", IsUnique = true, Order = 2)]
-        public int UserId { get; set; }
+        public long UserId { get; set; }
         public virtual Users User { get; set; }
 
         public int UnreadedMessages { get; set; }

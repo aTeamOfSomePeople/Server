@@ -9,22 +9,18 @@ namespace Server.Models
 {
     public class Users
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
 
         [Required]
         public string Name { get; set; }
 
-        [StringLength(30)]
-        public string Email { get; set; }
-
-        [StringLength(20), Index("login", IsUnique = true), Required]
-        public string Login { get; set; }
-
-        [Required]
-        public string Password { get; set; }
-
         public string Avatar { get; set; }
 
-        public bool IsDeleted { get; set; }
+        [Index("Account", IsUnique = true, Order = 0)]
+        public long AccountId { get; set; }
+
+        [Index("Account", IsUnique = true, Order = 1)]
+        public bool IsExternal { get; set; }
+        
     }   
 }

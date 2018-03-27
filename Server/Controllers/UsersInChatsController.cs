@@ -92,33 +92,33 @@ namespace Server.Controllers
             return jsonResult;
         }
 
-        // POST: UsersInChats/Delete/5
-        [HttpPost, ActionName("Delete")]
-        //[ValidateAntiForgeryToken]
-        public async Task<ActionResult> Delete(string login, string password, int? chatId, int? userId)
-        {
-            var jsonResult = new JsonResult();
-            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
-            jsonResult.Data = false;
+        //// POST: UsersInChats/Delete/5
+        //[HttpPost, ActionName("Delete")]
+        ////[ValidateAntiForgeryToken]
+        //public async Task<ActionResult> Delete(string login, string password, int? chatId, int? userId)
+        //{
+        //    var jsonResult = new JsonResult();
+        //    jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+        //    jsonResult.Data = false;
 
-            if (!chatId.HasValue || !userId.HasValue || login == null || password == null)
-            {
-                return jsonResult;
-            }
+        //    if (!chatId.HasValue || !userId.HasValue || login == null || password == null)
+        //    {
+        //        return jsonResult;
+        //    }
 
-            UsersInChats usersInChats = await db.UsersInChats.FirstOrDefaultAsync(e => e.ChatId == chatId && (db.Users.FirstOrDefault(z => z.Login == login && z.Password == password).Id == db.Chats.FirstOrDefault(z => z.Id == chatId).Creator) || (db.Users.FirstOrDefault(z => z.Login == login && z.Password == password).Id == userId));
+        //    UsersInChats usersInChats = await db.UsersInChats.FirstOrDefaultAsync(e => e.ChatId == chatId && (db.Users.FirstOrDefault(z => z.Login == login && z.Password == password).Id == db.Chats.FirstOrDefault(z => z.Id == chatId).Creator) || (db.Users.FirstOrDefault(z => z.Login == login && z.Password == password).Id == userId));
 
-            if (usersInChats != null)
-            {
-                db.UsersInChats.Remove(usersInChats);
-                await db.SaveChangesAsync();
-                jsonResult.Data = true;
-                return jsonResult;
-            }
+        //    if (usersInChats != null)
+        //    {
+        //        db.UsersInChats.Remove(usersInChats);
+        //        await db.SaveChangesAsync();
+        //        jsonResult.Data = true;
+        //        return jsonResult;
+        //    }
 
-            jsonResult.Data = false;
-            return jsonResult;
-        }
+        //    jsonResult.Data = false;
+        //    return jsonResult;
+        //}
 
         protected override void Dispose(bool disposing)
         {

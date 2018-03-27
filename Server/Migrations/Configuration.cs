@@ -25,7 +25,7 @@ namespace Server.Migrations
             //      new Person { FullName = "Brice Lambson" },
             //      new Person { FullName = "Rowan Miller" }
             //    );
-            //
+            context.Services.AddOrUpdate(new Models.ExternalServices { Name = "vk" }, new Models.ExternalServices { Name = "google" }, new Models.ExternalServices { Name = "instagram" });
         }
     }
 }

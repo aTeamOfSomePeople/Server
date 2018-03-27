@@ -117,6 +117,12 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="VKAccessToken" xml:space="preserve">
+    <value>c252464dc252464dc252464dd0c2339ff1cc252c252464d98febf7240be4070e5b11d85</value>
+  </data>
+  <data name="VKSecretKey" xml:space="preserve">
+    <value>9zdJM9Th4AMXq8fZx4Na</value>
+  </data>
   <data name="ZeroCDNKey" xml:space="preserve">
     <value>ZeroMessenger</value>
   </data>

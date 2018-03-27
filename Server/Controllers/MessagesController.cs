@@ -85,26 +85,26 @@ namespace Server.Controllers
         // POST: Messages/Create
         // Чтобы защититься от атак чрезмерной передачи данных, включите определенные свойства, для которых следует установить привязку. Дополнительные 
         // сведения см. в статье https://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        //[ValidateAntiForgeryToken]
-        public async Task<ActionResult> Create(Messages messages)
-        {
-            var jsonResult = new JsonResult();
-            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+        //[HttpPost]
+        ////[ValidateAntiForgeryToken]
+        //public async Task<ActionResult> Create(Messages messages)
+        //{
+        //    var jsonResult = new JsonResult();
+        //    jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
 
-            if (ModelState.IsValid && !db.Users.Any(e => e.IsDeleted && e.Id == messages.UserId) && db.UsersInChats.Any(e => e.ChatId == messages.ChatId && e.UserId == messages.UserId && e.CanWrite))
-            {
-                messages.IsReaded = false;
-                messages.Date = DateTime.Now;
-                db.Messages.Add(messages);
-                await db.SaveChangesAsync();
-                jsonResult.Data = messages;
-                return jsonResult;
-            }
+        //    if (ModelState.IsValid && !db.Users.Any(e => e.IsDeleted && e.Id == messages.UserId) && db.UsersInChats.Any(e => e.ChatId == messages.ChatId && e.UserId == messages.UserId && e.CanWrite))
+        //    {
+        //        messages.IsReaded = false;
+        //        messages.Date = DateTime.Now;
+        //        db.Messages.Add(messages);
+        //        await db.SaveChangesAsync();
+        //        jsonResult.Data = messages;
+        //        return jsonResult;
+        //    }
 
-            jsonResult.Data = false;
-            return jsonResult;
-        }
+        //    jsonResult.Data = false;
+        //    return jsonResult;
+        //}
 
         // POST: Messages/Edit/5
         // Чтобы защититься от атак чрезмерной передачи данных, включите определенные свойства, для которых следует установить привязку. Дополнительные 
@@ -132,34 +132,34 @@ namespace Server.Controllers
         // POST: Messages/Delete/5
         [HttpPost, ActionName("Delete")]
         //[ValidateAntiForgeryToken]
-        public async Task<ActionResult> Delete(int id, int chatId, string userLogin, string userPassword)
-        {
-            var jsonResult = new JsonResult();
-            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+        //public async Task<ActionResult> Delete(int id, int chatId, string userLogin, string userPassword)
+        //{
+        //    var jsonResult = new JsonResult();
+        //    jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
 
-            Messages messages = await db.Messages.FirstOrDefaultAsync(e => e.Id == id && db.UsersInChats.Any(z => z.ChatId == chatId));
-            if (messages != null)
-            {
-                db.Messages.Remove(messages);
-                await db.SaveChangesAsync();
-                var cdnClient = (new ZeroCdnClients.CdnClientsFactory(Resource.ZeroCDNUsername, Resource.ZeroCDNKey)).Files;
-                var attachments = await db.Attachments.Where(e => e.MessageId == id).ToListAsync();
-                try
-                {
-                    foreach (var attachment in attachments)
-                    {
-                        await cdnClient.Remove(attachment.CDNId);
-                    }
-                }
-                catch { }
-                db.Attachments.RemoveRange(attachments);
-                jsonResult.Data = true;
-                return jsonResult;
-            }
+        //    Messages messages = await db.Messages.FirstOrDefaultAsync(e => e.Id == id && db.UsersInChats.Any(z => z.ChatId == chatId));
+        //    if (messages != null)
+        //    {
+        //        db.Messages.Remove(messages);
+        //        await db.SaveChangesAsync();
+        //        var cdnClient = (new ZeroCdnClients.CdnClientsFactory(Resource.ZeroCDNUsername, Resource.ZeroCDNKey)).Files;
+        //        var attachments = await db.Attachments.Where(e => e.MessageId == id).ToListAsync();
+        //        try
+        //        {
+        //            foreach (var attachment in attachments)
+        //            {
+        //                await cdnClient.Remove(attachment.CDNId);
+        //            }
+        //        }
+        //        catch { }
+        //        db.Attachments.RemoveRange(attachments);
+        //        jsonResult.Data = true;
+        //        return jsonResult;
+        //    }
 
-            jsonResult.Data = false;
-            return jsonResult;
-        }
+        //    jsonResult.Data = false;
+        //    return jsonResult;
+        //}
 
         protected override void Dispose(bool disposing)
         {

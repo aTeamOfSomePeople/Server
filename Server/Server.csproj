@@ -19,8 +19,7 @@
     <MvcBuildViews>false</MvcBuildViews>
     <UseIISExpress>true</UseIISExpress>
     <Use64BitIISExpress />
-    <IISExpressSSLPort>
-    </IISExpressSSLPort>
+    <IISExpressSSLPort>44364</IISExpressSSLPort>
     <IISExpressAnonymousAuthentication />
     <IISExpressWindowsAuthentication />
     <IISExpressUseClassicPipelineMode />
@@ -176,6 +175,7 @@
     <Compile Include="App_Start\BundleConfig.cs" />
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
+    <Compile Include="Controllers\AccountsController.cs" />
     <Compile Include="Controllers\AttachmentsController.cs" />
     <Compile Include="Controllers\BannedUsersController.cs" />
     <Compile Include="Controllers\ChatsController.cs" />
@@ -186,13 +186,17 @@
     <Compile Include="Controllers\UsersInChatsController.cs" />
     <Compile Include="Hubs\ChatHub.cs" />
     <Compile Include="Migrations\Configuration.cs" />
+    <Compile Include="Models\Accounts.cs" />
     <Compile Include="Models\BannedUsers.cs" />
     <Compile Include="Models\DeletedMessages.cs" />
+    <Compile Include="Models\ExternalAccounts.cs" />
+    <Compile Include="Models\ExternalServices.cs" />
     <Compile Include="Models\MutedUsers.cs" />
-    <Compile Include="Resource.Designer.cs">
+    <Compile Include="Models\Tokens.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
-      <DependentUpon>Resource.resx</DependentUpon>
+      <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <Compile Include="Startup.cs" />
     <Compile Include="App_Start\WebApiConfig.cs" />
@@ -295,6 +299,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
+    <Folder Include="Views\Accounts\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="fonts\glyphicons-halflings-regular.woff" />
@@ -310,9 +315,9 @@
     <Content Include="Scripts\jquery-1.10.2.min.map" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resource.resx">
+    <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resource.Designer.cs</LastGenOutput>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>
@@ -336,7 +341,7 @@
           <AutoAssignPort>True</AutoAssignPort>
           <DevelopmentServerPort>64038</DevelopmentServerPort>
           <DevelopmentServerVPath>/</DevelopmentServerVPath>
-          <IISUrl>http://localhost:64038/</IISUrl>
+          <IISUrl>https://localhost:44364/</IISUrl>
           <NTLMAuthentication>False</NTLMAuthentication>
           <UseCustomServer>False</UseCustomServer>
           <CustomServerUrl>

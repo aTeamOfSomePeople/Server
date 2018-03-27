@@ -50,24 +50,24 @@ namespace Server.Controllers
         // POST: BannedUsers/Create
         // Чтобы защититься от атак чрезмерной передачи данных, включите определенные свойства, для которых следует установить привязку. Дополнительные 
         // сведения см. в статье https://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        //[ValidateAntiForgeryToken]
-        public async Task<ActionResult> Create(BannedUsers bannedUsers, string login, string password)
-        {
-            var jsonResult = new JsonResult();
-            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
-            jsonResult.Data = null;
+        //[HttpPost]
+        ////[ValidateAntiForgeryToken]
+        //public async Task<ActionResult> Create(BannedUsers bannedUsers, string login, string password)
+        //{
+        //    var jsonResult = new JsonResult();
+        //    jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+        //    jsonResult.Data = null;
 
-            if (ModelState.IsValid && db.Users.Any(e => e.Login == login && e.Password == password && e.Id == bannedUsers.BannerId))
-            {
-                db.BannedUsers.Add(bannedUsers);
-                await db.SaveChangesAsync();
-                jsonResult.Data = bannedUsers;
-                return jsonResult;
-            }
+        //    if (ModelState.IsValid && db.Users.Any(e => e.Login == login && e.Password == password && e.Id == bannedUsers.BannerId))
+        //    {
+        //        db.BannedUsers.Add(bannedUsers);
+        //        await db.SaveChangesAsync();
+        //        jsonResult.Data = bannedUsers;
+        //        return jsonResult;
+        //    }
             
-            return jsonResult;
-        }
+        //    return jsonResult;
+        //}
 
         // POST: BannedUsers/Edit/5
         // Чтобы защититься от атак чрезмерной передачи данных, включите определенные свойства, для которых следует установить привязку. Дополнительные 
@@ -91,30 +91,30 @@ namespace Server.Controllers
         }
 
         // POST: BannedUsers/Delete/5
-        [HttpPost, ActionName("Delete")]
-        //[ValidateAntiForgeryToken]
-        public async Task<ActionResult> Delete(int? userId, string login, string password)
-        {
-            var jsonResult = new JsonResult();
-            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
-            jsonResult.Data = false;
+        //[HttpPost, ActionName("Delete")]
+        ////[ValidateAntiForgeryToken]
+        //public async Task<ActionResult> Delete(int? userId, string login, string password)
+        //{
+        //    var jsonResult = new JsonResult();
+        //    jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+        //    jsonResult.Data = false;
 
-            if (!userId.HasValue || login == null || password == null)
-            {
-                return jsonResult;
-            }
-            var bannerId = (await db.Users.Where(e => e.Login == login && e.Password == password).FirstOrDefaultAsync()).Id;
-            var bannedUsers = await db.BannedUsers.Where(e => e.BannedId == userId && e.BannerId == bannerId).FirstOrDefaultAsync();
-            if (bannedUsers != null)
-            {
-                db.BannedUsers.Remove(bannedUsers);
-                await db.SaveChangesAsync();
-                jsonResult.Data = true;
-                return jsonResult;
-            }
+        //    if (!userId.HasValue || login == null || password == null)
+        //    {
+        //        return jsonResult;
+        //    }
+        //    var bannerId = (await db.Users.Where(e => e.Login == login && e.Password == password).FirstOrDefaultAsync()).Id;
+        //    var bannedUsers = await db.BannedUsers.Where(e => e.BannedId == userId && e.BannerId == bannerId).FirstOrDefaultAsync();
+        //    if (bannedUsers != null)
+        //    {
+        //        db.BannedUsers.Remove(bannedUsers);
+        //        await db.SaveChangesAsync();
+        //        jsonResult.Data = true;
+        //        return jsonResult;
+        //    }
 
-            return jsonResult;
-        }
+        //    return jsonResult;
+        //}
 
         protected override void Dispose(bool disposing)
         {
