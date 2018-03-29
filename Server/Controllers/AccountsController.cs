@@ -8,6 +8,7 @@ using System.Net;
 using System.Web;
 using System.Web.Mvc;
 using Server.Models;
+using System.Text;
 
 namespace Server.Controllers
 {
@@ -15,27 +16,38 @@ namespace Server.Controllers
     {
         private ServerContext db = new ServerContext();
 
-        // GET: Accounts/Details/5
-        public async Task<ActionResult> Details(long? id)
+        [HttpPost]
+        public async Task<ActionResult> Auth(string login, string password)
         {
-            if (id == null)
+            if (String.IsNullOrWhiteSpace(login) || String.IsNullOrWhiteSpace(password))
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
             }
-            Accounts accounts = await db.Accounts.FindAsync(id);
-            if (accounts == null)
+
+            var account = await db.Accounts.FirstOrDefaultAsync(e => e.Login == login);
+            if (account == null)
             {
                 return HttpNotFound();
             }
-            return View(accounts);
+            if (account.IsDeleted)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Account is deleted");
+            }
+
+            var passwordHash = StringHash(System.Text.Encoding.UTF8.GetBytes($"{login}{Properties.Resources.HMACKey}"), System.Text.Encoding.UTF8.GetBytes(password));
+
+            if (account.Password == passwordHash)
+            {
+                var tokens = await NewTokens(account.Id);
+                return Json(new Utils.AuthorizeResponse(tokens.AccessToken, tokens.RefreshToken, tokens.UserId));
+            }
+
+            return HttpNotFound();
         }
 
         [HttpPost]
         public async Task<ActionResult> OAuth(string accessToken, string service)
         {
-            var jsonResult = new JsonResult();
-            jsonResult.Data = null;
-
             if (String.IsNullOrWhiteSpace(accessToken) || String.IsNullOrWhiteSpace(service))
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
@@ -62,8 +74,8 @@ namespace Server.Controllers
                         {
                             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");
                         }
-
-                        if (await db.ExternalAccounts.FirstOrDefaultAsync(e => e.UserId == VKUserId && e.Service == serv.Id) == null)
+                        var externalAccount = await db.ExternalAccounts.FirstOrDefaultAsync(e => e.UserId == VKUserId && e.Service == serv.Id);
+                        if (externalAccount == null)
                         {
                             var account = new ExternalAccounts();
                             account.UserId = VKUserId;
@@ -73,10 +85,10 @@ namespace Server.Controllers
 
                             var cdnClient = (new ZeroCdnClients.CdnClientsFactory(Properties.Resources.ZeroCDNUsername, Properties.Resources.ZeroCDNKey)).Files;
 
-                            var httpResponse = await (new System.Net.Http.HttpClient()).GetAsync(String.Format("https://api.vk.com/method/users.get?user_ids={0}&fields=photo_200&access_token={1}&client_secret={2}&v=5.73", VKUserId, Properties.Resources.VKAccessToken, Properties.Resources.VKSecretKey));
+                            var httpResponse = await (new System.Net.Http.HttpClient()).GetAsync(String.Format("https://api.vk.com/method/users.get?user_ids={0}&fields=photo_max_orig&access_token={1}&client_secret={2}&v=5.73", VKUserId, Properties.Resources.VKAccessToken, Properties.Resources.VKSecretKey));
                             var stringResponse = await httpResponse.Content.ReadAsStringAsync();
                             var response = Newtonsoft.Json.JsonConvert.DeserializeObject<VKUserInfoResponse>(stringResponse).response;
-                            var avatar = await cdnClient.Add(await (new System.Net.Http.HttpClient()).GetByteArrayAsync(response[0]["photo_200"]), response[0]["photo_200"].Split('/').LastOrDefault());
+                            var avatar = await cdnClient.Add(await (new System.Net.Http.HttpClient()).GetByteArrayAsync(response[0]["photo_max_orig"]), $"{DateTime.UtcNow.Ticks} {response[0]["photo_max_orig"].Split('/').LastOrDefault()}");
                             var user = new Users
                             {
                                 IsExternal = true,
@@ -87,86 +99,131 @@ namespace Server.Controllers
                             db.Users.Add(user);
                             await db.SaveChangesAsync();
                         }
+                        else if (externalAccount.IsDeleted)
+                        {
+                            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Account is deleted");
+                        }
 
-                        var tokens = new Tokens();
-                        tokens.AccessToken = Guid.NewGuid().ToString().Replace("-", "");
-                        tokens.RefreshToken = Guid.NewGuid().ToString().Replace("-", "");
-                        tokens.UserId = (await db.Users.FirstOrDefaultAsync(e => e.AccountId == VKUserId)).Id;
-                        tokens.EndDate = DateTime.UtcNow.AddDays(1);
+                        var tokens = await NewTokens(VKUserId);
 
-                        db.Tokens.Add(tokens);
-                        await db.SaveChangesAsync();
-
-                        jsonResult.Data = new Utils.AuthorizeResponse(tokens.AccessToken, tokens.RefreshToken, tokens.UserId);
-                        return jsonResult;
+                        return Json(new Utils.AuthorizeResponse(tokens.AccessToken, tokens.RefreshToken, tokens.UserId));
+                         
                     case 2:
-                        return jsonResult;
+                        return Json(null);
                     case 3:
-                        return jsonResult;
+                        return Json(null);
                 }
             }
-            catch(Exception e) { jsonResult.Data = e.Message; return jsonResult; }
+            catch { }
+
+            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
+        }
+        
+        [HttpPost]
+        public async Task<ActionResult> Register(string login, string password, string name)
+        {
+            if (String.IsNullOrWhiteSpace(login) || String.IsNullOrWhiteSpace(password) || String.IsNullOrWhiteSpace(name))
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
+            }
+
+            if (db.Accounts.Any(e => e.Login == login))
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Account already exists");
+            }
+
+            if (ModelState.IsValid)
+            {
+                var account = new Accounts()
+                {
+                    Login = login,
+                    Password = StringHash(Encoding.UTF8.GetBytes($"{login}{Properties.Resources.HMACKey}"), Encoding.UTF8.GetBytes(password)),
+                    IsDeleted = false
+                };
+                db.Accounts.Add(account);
+                await db.SaveChangesAsync();
+
+                var user = new Users()
+                {
+                    Name = name,
+                    IsExternal = false,
+                    AccountId = account.Id
+                };
+                db.Users.Add(user);
+
+                await db.SaveChangesAsync();
+                return new HttpStatusCodeResult(HttpStatusCode.OK);
+            }
+
+            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
+        }
+        
+        [HttpPost]
+        public async Task<ActionResult> ChangePassword(string accessToken, string oldPassword, string newPassword)
+        {
+            if (String.IsNullOrWhiteSpace(accessToken) || String.IsNullOrWhiteSpace(oldPassword) || String.IsNullOrWhiteSpace(newPassword))
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
+            }
+
+            if (ModelState.IsValid)
+            {
+                var tokens = await TokensController.ValidToken(accessToken, db);
+                if (tokens == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");
+                }
+
+                var user = await db.Users.FindAsync(tokens.UserId);
+                if (user.IsExternal)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Allowed only for internal users");
+                }
+
+                var account = await db.Accounts.FindAsync(user.AccountId);
+                if (account.Password != StringHash(Encoding.UTF8.GetBytes($"{account.Login}{Properties.Resources.HMACKey}"), Encoding.UTF8.GetBytes(oldPassword)))
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Passwords don't match");
+                }
+
+                account.Password = StringHash(Encoding.UTF8.GetBytes($"{account.Login}{Properties.Resources.HMACKey}"), Encoding.UTF8.GetBytes(newPassword));
+                db.Entry(account).State = EntityState.Modified;
+                try
+                {
+                    db.Tokens.RemoveRange(db.Tokens.Where(e => e.UserId == db.Users.FirstOrDefault(z => z.AccountId == account.Id).Id));
+                }
+                catch { }
+                await db.SaveChangesAsync();
+
+                return new HttpStatusCodeResult(HttpStatusCode.OK);
+            }
 
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
 
         [HttpPost]
-        public async Task<ActionResult> RefreshTokens(string refreshToken)
-        {
-            var jsonResult = new JsonResult();
-            jsonResult.Data = null;
-
-            if (String.IsNullOrWhiteSpace(refreshToken))
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-
-            var tokens = await db.Tokens.FirstOrDefaultAsync(e => e.RefreshToken == refreshToken);
-            if (tokens != null)
-            {
-                tokens.AccessToken = Guid.NewGuid().ToString().Replace("-", "");
-                tokens.RefreshToken = Guid.NewGuid().ToString().Replace("-", "");
-
-                db.Entry(tokens).State = EntityState.Modified;
-                await db.SaveChangesAsync();
-
-                jsonResult.Data = new Utils.AuthorizeResponse(tokens.AccessToken, tokens.RefreshToken, tokens.UserId);
-                return jsonResult;
-            }
-                
-
-            return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-        }
-        // POST: Accounts/Create
-        // Чтобы защититься от атак чрезмерной передачи данных, включите определенные свойства, для которых следует установить привязку. Дополнительные 
-        // сведения см. в статье https://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        public async Task<ActionResult> Create([Bind(Include = "Email,Login,Password")] Accounts accounts)
+        public async Task<ActionResult> Delete(string accessToken)
         {
             if (ModelState.IsValid)
             {
-                db.Accounts.Add(accounts);
+                var tokens = await TokensController.ValidToken(accessToken, db);
+                if (tokens == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");
+                }
+
+                var user = await db.Users.FindAsync(tokens.UserId);
+
+                var account = await db.Accounts.FindAsync(user.AccountId);
+                account.IsDeleted = true;
+                db.Entry(account).State = EntityState.Modified;
+                db.Tokens.RemoveRange(db.Tokens.Where(e => e.UserId == user.Id));
                 await db.SaveChangesAsync();
-                return RedirectToAction("Index");
+
+                return new HttpStatusCodeResult(HttpStatusCode.OK);
             }
 
-            return View(accounts);
-        }
-
-        // POST: Accounts/Edit/5
-        // Чтобы защититься от атак чрезмерной передачи данных, включите определенные свойства, для которых следует установить привязку. Дополнительные 
-        // сведения см. в статье https://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Edit([Bind(Include = "Id,Email,Login,Password")] Accounts accounts)
-        {
-            if (ModelState.IsValid)
-            {
-                db.Entry(accounts).State = EntityState.Modified;
-                await db.SaveChangesAsync();
-                return RedirectToAction("Index");
-            }
-            return View(accounts);
+            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
 
         protected override void Dispose(bool disposing)
@@ -176,6 +233,28 @@ namespace Server.Controllers
                 db.Dispose();
             }
             base.Dispose(disposing);
+        }
+
+        private async Task<Tokens> NewTokens(long userId)
+        {
+            var tokens = new Tokens
+            {
+                AccessToken = Guid.NewGuid().ToString().Replace("-", ""),
+                RefreshToken = Guid.NewGuid().ToString().Replace("-", ""),
+                UserId = (await db.Users.FirstOrDefaultAsync(e => e.AccountId == userId)).Id,
+                Date = DateTime.UtcNow,
+                Expire = DateTime.UtcNow.AddDays(1)
+            };
+
+            db.Tokens.Add(tokens);
+            await db.SaveChangesAsync();
+
+            return tokens;
+        }
+
+        private string StringHash(byte[] key, byte[] message)
+        {
+            return Convert.ToBase64String(new System.Security.Cryptography.HMACSHA1(key).ComputeHash(message));
         }
 
         private class VKTokenCheckResponse

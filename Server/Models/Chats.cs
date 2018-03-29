@@ -19,7 +19,7 @@ namespace Server.Models
         public string Name { get; set; }
 
         [Required]
-        public string Type { get; set; }
+        public Enums.ChatType Type { get; set; }
 
         public string Avatar { get; set; }
     }

@@ -61,6 +61,15 @@ namespace Server.Properties {
         }
         
         /// <summary>
+        ///   Ищет локализованную строку, похожую на ZZVDrNLg39EZSnjSES5P0T5lcI.
+        /// </summary>
+        internal static string HMACKey {
+            get {
+                return ResourceManager.GetString("HMACKey", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Ищет локализованную строку, похожую на c252464dc252464dc252464dd0c2339ff1cc252c252464d98febf7240be4070e5b11d85.
         /// </summary>
         internal static string VKAccessToken {

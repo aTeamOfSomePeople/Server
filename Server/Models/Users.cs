@@ -22,5 +22,6 @@ namespace Server.Models
         [Index("Account", IsUnique = true, Order = 1)]
         public bool IsExternal { get; set; }
         
+        public string Description { get; set; }
     }   
 }

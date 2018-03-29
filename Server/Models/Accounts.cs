@@ -11,9 +11,6 @@ namespace Server.Models
     {
         public long Id { get; set; }
 
-        [StringLength(30), EmailAddress]
-        public string Email { get; set; }
-
         [StringLength(20), Index("login", IsUnique = true), Required]
         public string Login { get; set; }
 

@@ -117,6 +117,9 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="HMACKey" xml:space="preserve">
+    <value>ZZVDrNLg39EZSnjSES5P0T5lcI</value>
+  </data>
   <data name="VKAccessToken" xml:space="preserve">
     <value>c252464dc252464dc252464dd0c2339ff1cc252c252464d98febf7240be4070e5b11d85</value>
   </data>

@@ -14,192 +14,318 @@ namespace Server.Controllers
     public class ChatsController : Controller
     {
         private ServerContext db = new ServerContext();
-
-        // GET: Chats
-        private async Task<ActionResult> Index()
-        {
-            var jsonResult = new JsonResult();
-            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
-            jsonResult.Data = await db.Chats.Select(e => new { Id = e.Id, Creator = e.Creator, Name = e.Name, Type = e.Type, Avatar = e.Avatar }).ToListAsync();
-
-            return jsonResult;
-        }
         
-        //// GET: Chats/Details/5
-        //public async Task<ActionResult> Details(int? id)
-        //{
-        //    var jsonResult = new JsonResult();
-        //    jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
-
-        //    if (id == null)
-        //    {
-        //        return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-        //    }
-        //    var chats = await db.Chats.Select(e => new { Id = e.Id, Creator = e.Creator, Name = e.Name, Type = e.Type }).FirstOrDefaultAsync(e => e.Id == id);
-        //    if (chats == null)
-        //    {
-        //        return HttpNotFound();
-        //    }
-        //    jsonResult.Data = chats;
-
-        //    return jsonResult;
-        //}
-
-        public async Task<ActionResult> FindPublics(string name, int? start, int? count)
-        {
-            var jsonResult = new JsonResult();
-            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
-            jsonResult.Data = null;
-
-            if (name == null)
-            {
-                return jsonResult;
-            }
-
-            var publics = await db.Chats.Where(e => e.Type.ToLower() == "public" && e.Name.ToLower().Contains(name.ToLower())).Select(e => new { Id = e.Id, Creator = e.Creator, Name = e.Name, Type = e.Type, Avatar = e.Avatar }).ToListAsync();
-
-            if (publics != null)
-            {
-                if (!start.HasValue || start.Value < 0)
-                {
-                    start = 0;
-                }
-                if (start.Value >= publics.Count)
-                {
-                    return jsonResult;
-                }
-                if (!count.HasValue || count.Value <= 0)
-                {
-                    count = publics.Count;
-                }
-                count = Math.Min(Math.Min(count.Value, publics.Count - start.Value), 100);
-                jsonResult.Data = publics.GetRange(start.Value, count.Value);
-            }
-
-            return jsonResult;
-        }
-
-        public async Task<ActionResult> UserChats(int? UserId, int? Start, int? Count)
-        {
-            var jsonResult = new JsonResult();
-            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
-            jsonResult.Data = null;
-
-            if (!UserId.HasValue)
-            {
-                return jsonResult;
-            }
-            var chats = await db.Chats.Select(e => new { Id = e.Id, Creator = e.Creator, Name = e.Name, Type = e.Type, Avatar = e.Avatar }).Where(e =>  db.UsersInChats.Any(el => el.UserId == UserId && e.Id == el.ChatId)).ToListAsync();
-            if (chats != null)
-            {
-                chats.Sort((first, second) =>
-                {
-                    var a = db.Messages.Where(e => e.ChatId == first.Id).ToList().LastOrDefault();
-                    var b = db.Messages.Where(e => e.ChatId == second.Id).ToList().LastOrDefault();
-                    if (a == b)
-                    {
-                        return 0;
-                    }
-                    if (a == null)
-                    {
-                        return 1;
-                    }
-                    else if (b == null)
-                    {
-                        return -1;
-                    }
-                    if (a.Date > b.Date)
-                    {
-                        return -1;
-                    }
-
-                    return 1;
-                });
-                //chats.Sort((a, b) => db.Messages.Any(e => e.ChatId == a.Id) != db.Messages.Any(e => e.ChatId == b.Id) && db.Messages.Any(e => e.ChatId == a.Id) ? -1 : db.Messages.Any(e => e.ChatId == a.Id) != db.Messages.Any(e => e.ChatId == b.Id) && db.Messages.Any(e => e.ChatId == b.Id) ? 1 : db.Messages.Any(e => e.ChatId == a.Id) && db.Messages.Where(e => e.ChatId == a.Id).Last().Date > db.Messages.Where(e => e.ChatId == b.Id).Last().Date ? 1 : db.Messages.Any(e => e.ChatId == a.Id) && db.Messages.Where(e => e.ChatId == a.Id).Last().Date < db.Messages.Where(e => e.ChatId == b.Id).Last().Date ? -1 : 0);
-                if (!Start.HasValue || Start.Value < 0)
-                {
-                    Start = 0;
-                }
-                if (Start.Value >= chats.Count)
-                {
-                    return jsonResult;
-                }
-                if (!Count.HasValue || Count.Value <= 0)
-                {
-                    Count = chats.Count;
-                }
-                Count = Math.Min(Math.Min(Count.Value, chats.Count - Start.Value), 100);
-                jsonResult.Data = chats.GetRange(Start.Value, Count.Value);
-            }
-            return jsonResult;
-        }
-
-        // POST: Chats/Create
-        // Чтобы защититься от атак чрезмерной передачи данных, включите определенные свойства, для которых следует установить привязку. Дополнительные 
-        // сведения см. в статье https://go.microsoft.com/fwlink/?LinkId=317598.
-        //[HttpPost]
-        ////[ValidateAntiForgeryToken]
-        //public async Task<ActionResult> Create(Chats chats)
-        //{
-        //    var jsonResult = new JsonResult();
-        //    jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
-
-        //    if (ModelState.IsValid && !db.Users.Any(e => e.IsDeleted && e.Id == chats.Creator))
-        //    {
-        //        db.Chats.Add(chats);
-        //        await db.SaveChangesAsync();
-        //        jsonResult.Data = chats;
-        //        return jsonResult;
-        //    }
-
-        //    jsonResult.Data = null;
-        //    return jsonResult;
-        //}
-
-        // POST: Chats/Edit/5
-        // Чтобы защититься от атак чрезмерной передачи данных, включите определенные свойства, для которых следует установить привязку. Дополнительные 
-        // сведения см. в статье https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
-        //[ValidateAntiForgeryToken]
-        public async Task<ActionResult> Edit(Chats chats)
+        public async Task<ActionResult> CreateDialog(string accessToken, long? secondUserId)
         {
-            var jsonResult = new JsonResult();
-            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
+            if (String.IsNullOrWhiteSpace(accessToken) || !secondUserId.HasValue)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
+            }
+            if (ModelState.IsValid)
+            {
+                var tokens = await TokensController.ValidToken(accessToken, db);
+                if (tokens == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");
+                }
+                if (tokens.UserId == secondUserId.Value)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "It's impossible to create a dialogue with yourself");
+                }
+                if (!db.Users.Any(e => e.Id == secondUserId))
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Second user is not exists");
+                }
+                if (db.BannedUsers.Any(e => e.BannerId == secondUserId && e.BannedId == tokens.UserId))
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "First user is banned by second user");
+                }
+
+                if (db.UsersInChats.Where(e => db.Chats.FirstOrDefault(z => z.Id == e.ChatId).Type == Enums.ChatType.Dialog).Where(e => e.UserId == tokens.UserId || e.UserId == secondUserId.Value).GroupBy(e => e.ChatId).Any(e => e.Count() == 2))
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Dialog already exists");
+                }
+
+                var chat = new Chats()
+                {
+                    Name = $"{(await db.Users.FirstOrDefaultAsync(e => e.AccountId == tokens.UserId)).Name} | {(await db.Users.FirstOrDefaultAsync(e => e.AccountId == secondUserId)).Name}",
+                    Type = Enums.ChatType.Dialog,
+                    Creator = tokens.UserId
+                };
+                db.Chats.Add(chat);
+                await db.SaveChangesAsync();
+                db.UsersInChats.Add(new UsersInChats() { ChatId = chat.Id, UserId = tokens.UserId, CanWrite = true, UnreadedMessages = 0});
+                db.UsersInChats.Add(new UsersInChats() { ChatId = chat.Id, UserId = secondUserId.Value, CanWrite = true, UnreadedMessages = 0});
+                await db.SaveChangesAsync();
+
+                return new HttpStatusCodeResult(HttpStatusCode.OK);
+            }
+
+            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
+        }
+
+        [HttpPost]
+        public async Task<ActionResult> CreateGroup(string accessToken, string name, long[] userIds)
+        {
+            if (String.IsNullOrWhiteSpace(accessToken) || String.IsNullOrWhiteSpace(name) || userIds == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
+            }
+            if (ModelState.IsValid)
+            {
+                var tokens = await TokensController.ValidToken(accessToken, db);
+                if (tokens == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");
+                }
+
+                var userIdsTable = new HashSet<long>(userIds);
+                userIdsTable.Add(tokens.UserId);
+                if (userIdsTable.Count < 3)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Requires at least 3 users");
+                }
+                if (!userIdsTable.All(e => db.Users.Find(e) != null))
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "One or more users is not exists");
+                }
+                if (!userIdsTable.All(e => !db.BannedUsers.Any(z => z.BannerId == e && z.BannedId == tokens.UserId)))
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "One or more users have banned the creator");
+                }
+
+                var chat = new Chats()
+                {
+                    Name = name,
+                    Type = Enums.ChatType.Group,
+                    Creator = tokens.UserId
+                };
+                db.Chats.Add(chat);
+                await db.SaveChangesAsync();
+
+                foreach (var e in userIdsTable)
+                {
+                    db.UsersInChats.Add(new UsersInChats() { ChatId = chat.Id, UserId = e, CanWrite = true, UnreadedMessages = 0 });
+                }
+                await db.SaveChangesAsync();
+
+                return new HttpStatusCodeResult(HttpStatusCode.OK);
+            }
+
+            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
+        }
+
+        [HttpPost]
+        public async Task<ActionResult> CreatePublic(string accessToken, string name, long[] userIds)
+        {
+            if (String.IsNullOrWhiteSpace(accessToken) || String.IsNullOrWhiteSpace(name))
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
+            }
+            if (ModelState.IsValid)
+            {
+                var tokens = await TokensController.ValidToken(accessToken, db);
+                if (tokens == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");
+                }
+
+                HashSet<long> userIdsTable = null;
+                if (userIds != null)
+                {
+                    userIdsTable = new HashSet<long>(userIds);
+                    userIdsTable.Add(tokens.UserId);
+
+                    if (!userIdsTable.All(e => db.Users.Find(e) != null))
+                    {
+                        return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "One or more users are not exists");
+                    }
+                    if (!userIdsTable.All(e => !db.BannedUsers.Any(z => z.BannerId == e && z.BannedId == tokens.UserId)))
+                    {
+                        return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "One or more users have banned the creator");
+                    }
+                }
+
+                var chat = new Chats()
+                {
+                    Name = name,
+                    Type = Enums.ChatType.Public,
+                    Creator = tokens.UserId
+                };
+                db.Chats.Add(chat);
+                await db.SaveChangesAsync();
+
+                db.UsersInChats.Add(new UsersInChats() { ChatId = chat.Id, UserId = tokens.UserId, CanWrite = false, UnreadedMessages = 0 });
+                if (userIdsTable != null)
+                {
+                    foreach (var e in userIdsTable)
+                    {
+                        db.UsersInChats.Add(new UsersInChats() { ChatId = chat.Id, UserId = e, CanWrite = false, UnreadedMessages = 0 });
+                    }
+                }
+                await db.SaveChangesAsync();
+
+                return new HttpStatusCodeResult(HttpStatusCode.OK);
+            }
+
+            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
+        }
+
+        [HttpPost]
+        public async Task<ActionResult> ChangeName(string accessToken, long? chatId, string newName)
+        {
+            if (String.IsNullOrWhiteSpace(accessToken) || String.IsNullOrWhiteSpace(newName) || !chatId.HasValue)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
+            }
+
+            var tokens = await TokensController.ValidToken(accessToken, db);
+            if (tokens == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");
+            }
 
             if (ModelState.IsValid)
             {
-                db.Entry(chats).State = EntityState.Modified;
+                var chat = await db.Chats.FindAsync(chatId);
+                if (chat == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Chat is not exists");
+                }
+
+                switch (chat.Type)
+                {
+                    case Enums.ChatType.Dialog:
+                        return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You can't change name of dialog");
+                    case Enums.ChatType.Group:
+                        if (!await db.UsersInChats.AnyAsync(e => e.UserId == tokens.UserId && e.ChatId == chatId))
+                        {
+                            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You don't have access to this chat");
+                        }
+                        break;
+                    case Enums.ChatType.Public:
+                        var userInChat = await db.UsersInChats.FirstOrDefaultAsync(e => e.UserId == tokens.UserId && e.ChatId == chatId);
+                        if (userInChat == null)
+                        {
+                            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You don't have access to this public");
+                        }
+                        if (!userInChat.CanWrite)
+                        {
+                            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Only admins can change name");
+                        }
+                        break;
+                }
+                chat.Name = newName;
+                db.Entry(chat).State = EntityState.Modified;
                 await db.SaveChangesAsync();
-                jsonResult.Data = chats;
-                return jsonResult;
+
+                return new HttpStatusCodeResult(HttpStatusCode.OK);
             }
 
-            jsonResult.Data = false;
-            return jsonResult;
+            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
 
-        //// POST: Chats/Delete/5
-        //[HttpPost, ActionName("Delete")]
-        ////[ValidateAntiForgeryToken]
-        //public async Task<ActionResult> Delete(int? chatId, string login, string password)
+        //[HttpPost]
+        //public async Task<ActionResult> ChangeAvatar(string accessToken, long? chatId, System.Drawing.Image avatar)
         //{
-        //    var jsonResult = new JsonResult();
-        //    jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
-        //    jsonResult.Data = false;
-
-        //    var chats = await db.Chats.FirstOrDefaultAsync(e => e.Id == chatId && db.Users.FirstOrDefault(z => z.Login == login && z.Password == password).Id == e.Creator);
-        //    if (chats != null)
+        //    if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue || avatar == null)
         //    {
-        //        db.UsersInChats.RemoveRange(await db.UsersInChats.Where(e => e.ChatId == chats.Id).ToListAsync());
-        //        db.Chats.Remove(chats);
-        //        await db.SaveChangesAsync();
-        //        jsonResult.Data = true;
-        //        return jsonResult;
+        //        return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
         //    }
 
-        //    jsonResult.Data = false;
-        //    return jsonResult;
+        //    var tokens = await TokensController.ValidToken(accessToken, db);
+        //    if (tokens == null)
+        //    {
+        //        return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");
+        //    }
+
+        //    if (ModelState.IsValid)
+        //    {
+        //        var chat = await db.Chats.FindAsync(chatId);
+        //        if (chat == null)
+        //        {
+        //            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Chat is not exists");
+        //        }
+
+        //        switch (chat.Type)
+        //        {
+        //            case Enums.ChatType.Dialog:
+        //                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You can't change name of dialog");
+        //            case Enums.ChatType.Group:
+        //                if (!await db.UsersInChats.AnyAsync(e => e.UserId == tokens.UserId && e.ChatId == chatId))
+        //                {
+        //                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You don't have access to this chat");
+        //                }
+        //                break;
+        //            case Enums.ChatType.Public:
+        //                var userInChat = await db.UsersInChats.FirstOrDefaultAsync(e => e.UserId == tokens.UserId && e.ChatId == chatId);
+        //                if (userInChat == null)
+        //                {
+        //                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You don't have access to this public");
+        //                }
+        //                if (!userInChat.CanWrite)
+        //                {
+        //                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Only admins can change name");
+        //                }
+        //                break;
+        //        }
+        //        var cdnClient = (new ZeroCdnClients.CdnClientsFactory(Properties.Resources.ZeroCDNUsername, Properties.Resources.ZeroCDNKey)).Files;
+        //        var avatarFile = await cdnClient.Add(, $"{DateTime.UtcNow.Ticks} {}");
+        //        chat.Avatar = $"http://zerocdn.com/{avatarFile.ID}/{avatarFile.Name}";
+        //        db.Entry(chat).State = EntityState.Modified;
+        //        await db.SaveChangesAsync();
+
+        //        return new HttpStatusCodeResult(HttpStatusCode.OK);
+        //    }
+
+        //    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         //}
+
+        [HttpPost]
+        public async Task<ActionResult> DeletePublic(string accessToken, long? chatId)
+        {
+            if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
+            }
+            if (ModelState.IsValid)
+            {
+                var tokens = await TokensController.ValidToken(accessToken, db);
+                if (tokens == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");
+                }
+
+                var chat = await db.Chats.FindAsync(chatId);
+                if (chat == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Public is not exists");
+                }
+                if (chat.Type != Enums.ChatType.Public)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "It's not a public");
+                }
+
+                var userInChat = await db.UsersInChats.FirstOrDefaultAsync(e => e.UserId == tokens.UserId && e.ChatId == chatId);
+                if (userInChat == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You don't have access to this public");
+                }
+                if (!userInChat.CanWrite)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Only admins can delete public");
+                }
+
+                Chats chats = await db.Chats.FindAsync(chatId);
+                db.Chats.Remove(chats);
+                await db.SaveChangesAsync();
+
+                return new HttpStatusCodeResult(HttpStatusCode.OK);
+            }
+
+            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
+        }
 
         protected override void Dispose(bool disposing)
         {

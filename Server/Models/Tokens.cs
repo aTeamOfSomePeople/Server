@@ -22,6 +22,9 @@ namespace Server.Models
         public virtual Users Users { get; set; }
 
         [Required]
-        public DateTime EndDate { get; set; } 
+        public DateTime Date { get; set; }
+
+        [Required]
+        public DateTime Expire { get; set; } 
     }
 }
