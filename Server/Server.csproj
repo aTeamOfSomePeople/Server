@@ -181,7 +181,7 @@
     <Compile Include="Controllers\TokensController.cs" />
     <Compile Include="Controllers\UsersController.cs" />
     <Compile Include="Enums\ChatTypes.cs" />
-    <Compile Include="Enums\MessagesDate.cs" />
+    <Compile Include="Enums\MessagesDirection.cs" />
     <Compile Include="Hubs\ChatHub.cs" />
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\Accounts.cs" />
@@ -239,6 +239,8 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utils\AuthorizeResponse.cs" />
     <Compile Include="Utils\CheckTokenResponse.cs" />
+    <Compile Include="Utils\FilesExstensions.cs" />
+    <Compile Include="Utils\ForbiddenSymbols.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Areas\HelpPage\HelpPage.css" />

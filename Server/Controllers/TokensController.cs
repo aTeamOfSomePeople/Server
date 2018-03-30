@@ -18,9 +18,6 @@ namespace Server.Controllers
         [HttpPost]
         public async Task<ActionResult> RefreshTokens(string refreshToken)
         {
-            var jsonResult = new JsonResult();
-            jsonResult.Data = null;
-
             if (String.IsNullOrWhiteSpace(refreshToken))
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
@@ -40,8 +37,8 @@ namespace Server.Controllers
                 db.Entry(tokens).State = EntityState.Modified;
                 await db.SaveChangesAsync();
 
-                jsonResult.Data = new Utils.AuthorizeResponse(tokens.AccessToken, tokens.RefreshToken, tokens.UserId);
-                return jsonResult;
+                return Json(new Utils.AuthorizeResponse(tokens.AccessToken, tokens.RefreshToken, tokens.UserId));
+                
             }
             catch { }
 
@@ -50,9 +47,6 @@ namespace Server.Controllers
 
         public async Task<ActionResult> CheckToken(string accessToken)
         {
-            var jsonResult = new JsonResult();
-            jsonResult.JsonRequestBehavior = JsonRequestBehavior.AllowGet;
-
             if (String.IsNullOrWhiteSpace(accessToken))
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
@@ -60,14 +54,12 @@ namespace Server.Controllers
             var token = await ValidToken(accessToken, db);
             if (token != null)
             {
-                jsonResult.Data = new Utils.CheckTokenResponse()
+                return Json(new Utils.CheckTokenResponse()
                 {
                     userId = token.UserId,
                     date = token.Date,
                     expire = token.Expire
-                };
-
-                return jsonResult;
+                }, JsonRequestBehavior.AllowGet);
             }
 
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Token is invalid");

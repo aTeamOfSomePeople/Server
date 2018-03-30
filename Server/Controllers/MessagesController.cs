@@ -60,13 +60,17 @@ namespace Server.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> GetMessages(string accessToken, long? chatId, Enums.MessagesDate? messagesDate, DateTime? date, int? count)
+        public async Task<ActionResult> GetMessages(string accessToken, long? chatId, Enums.MessagesDirection? direction, DateTime? date, int? count)
         {
-            if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue || !messagesDate.HasValue || !date.HasValue || !count.HasValue)
+            if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue || !direction.HasValue || !date.HasValue)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
             }
 
+            if (!count.HasValue)
+            {
+                count = 50;
+            }
             if (count <= 0)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Count must be greater than zero");
@@ -96,11 +100,11 @@ namespace Server.Controllers
 
             if (ModelState.IsValid)
             {
-                switch (messagesDate)
+                switch (direction)
                 {
-                    case Enums.MessagesDate.After:
+                    case Enums.MessagesDirection.After:
                         return Json(db.Messages.Where(e => e.ChatId == chatId && e.Date > date).Take(count.Value));
-                    case Enums.MessagesDate.Before:
+                    case Enums.MessagesDirection.Before:
                         return Json(db.Messages.Where(e => e.ChatId == chatId && e.Date < date).Reverse().Take(count.Value));
                 }
             }

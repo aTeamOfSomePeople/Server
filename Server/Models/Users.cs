@@ -16,12 +16,15 @@ namespace Server.Models
 
         public string Avatar { get; set; }
 
-        [Index("Account", IsUnique = true, Order = 0)]
+        [Required, Index("Account", IsUnique = true, Order = 0)]
         public long AccountId { get; set; }
 
-        [Index("Account", IsUnique = true, Order = 1)]
+        [Required, Index("Account", IsUnique = true, Order = 1)]
         public bool IsExternal { get; set; }
         
+        [Required]
+        public int ServiceId { get; set; }
+
         public string Description { get; set; }
     }   
 }

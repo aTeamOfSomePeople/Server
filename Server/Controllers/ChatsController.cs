@@ -226,61 +226,70 @@ namespace Server.Controllers
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
 
-        //[HttpPost]
-        //public async Task<ActionResult> ChangeAvatar(string accessToken, long? chatId, System.Drawing.Image avatar)
-        //{
-        //    if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue || avatar == null)
-        //    {
-        //        return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
-        //    }
+        [HttpPost]
+        public async Task<ActionResult> ChangeAvatar(string accessToken, long? chatId, HttpPostedFileBase avatar)
+        {
+            if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
+            }
+            if (avatar == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "File is null");
+            }
+            if (avatar.FileName.Any(e => Utils.ForbiddenSymbols.inFileName.Contains(e)))
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, $"File name contains forbidden symbols");
+            }
+            if (!Utils.FilesExstensions.PosibleImageExtensions.Contains(avatar.FileName.Split('.').LastOrDefault()))
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid file type");
+            }
+            var tokens = await TokensController.ValidToken(accessToken, db);
+            if (tokens == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");
+            }
 
-        //    var tokens = await TokensController.ValidToken(accessToken, db);
-        //    if (tokens == null)
-        //    {
-        //        return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");
-        //    }
+            if (ModelState.IsValid)
+            {
+                var chat = await db.Chats.FindAsync(chatId);
+                if (chat == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Chat is not exists");
+                }
 
-        //    if (ModelState.IsValid)
-        //    {
-        //        var chat = await db.Chats.FindAsync(chatId);
-        //        if (chat == null)
-        //        {
-        //            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Chat is not exists");
-        //        }
+                var userInChat = await db.UsersInChats.FirstOrDefaultAsync(e => e.UserId == tokens.UserId && e.ChatId == chatId);
+                if (userInChat == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You don't have access to this public");
+                }
+                if (!userInChat.CanWrite)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You can't change avatar in this chat");
+                }
+                var cdnClient = (new ZeroCdnClients.CdnClientsFactory(Properties.Resources.ZeroCDNUsername, Properties.Resources.ZeroCDNKey)).Files;
 
-        //        switch (chat.Type)
-        //        {
-        //            case Enums.ChatType.Dialog:
-        //                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You can't change name of dialog");
-        //            case Enums.ChatType.Group:
-        //                if (!await db.UsersInChats.AnyAsync(e => e.UserId == tokens.UserId && e.ChatId == chatId))
-        //                {
-        //                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You don't have access to this chat");
-        //                }
-        //                break;
-        //            case Enums.ChatType.Public:
-        //                var userInChat = await db.UsersInChats.FirstOrDefaultAsync(e => e.UserId == tokens.UserId && e.ChatId == chatId);
-        //                if (userInChat == null)
-        //                {
-        //                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You don't have access to this public");
-        //                }
-        //                if (!userInChat.CanWrite)
-        //                {
-        //                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Only admins can change name");
-        //                }
-        //                break;
-        //        }
-        //        var cdnClient = (new ZeroCdnClients.CdnClientsFactory(Properties.Resources.ZeroCDNUsername, Properties.Resources.ZeroCDNKey)).Files;
-        //        var avatarFile = await cdnClient.Add(, $"{DateTime.UtcNow.Ticks} {}");
-        //        chat.Avatar = $"http://zerocdn.com/{avatarFile.ID}/{avatarFile.Name}";
-        //        db.Entry(chat).State = EntityState.Modified;
-        //        await db.SaveChangesAsync();
+                var file = new byte[avatar.ContentLength];
+                await avatar.InputStream.ReadAsync(file, 0, avatar.ContentLength);
+                var avatarFile = await cdnClient.Add(file, $"{DateTime.UtcNow.Ticks}.{avatar.FileName.Split('.').LastOrDefault()}");
+                try
+                {
+                    if (chat.Avatar != null)
+                    {
+                        await cdnClient.Remove(long.Parse(chat.Avatar.Split('/')[3]));
+                    }
+                }
+                catch { }
+                chat.Avatar = $"http://zerocdn.com/{avatarFile.ID}/{avatarFile.Name}";
 
-        //        return new HttpStatusCodeResult(HttpStatusCode.OK);
-        //    }
+                db.Entry(chat).State = EntityState.Modified;
+                await db.SaveChangesAsync();
+                return new HttpStatusCodeResult(HttpStatusCode.OK);
+            }
 
-        //    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
-        //}
+            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
+        }
 
         [HttpPost]
         public async Task<ActionResult> DeletePublic(string accessToken, long? chatId)

@@ -88,7 +88,7 @@ namespace Server.Controllers
                             var httpResponse = await (new System.Net.Http.HttpClient()).GetAsync(String.Format("https://api.vk.com/method/users.get?user_ids={0}&fields=photo_max_orig&access_token={1}&client_secret={2}&v=5.73", VKUserId, Properties.Resources.VKAccessToken, Properties.Resources.VKSecretKey));
                             var stringResponse = await httpResponse.Content.ReadAsStringAsync();
                             var response = Newtonsoft.Json.JsonConvert.DeserializeObject<VKUserInfoResponse>(stringResponse).response;
-                            var avatar = await cdnClient.Add(await (new System.Net.Http.HttpClient()).GetByteArrayAsync(response[0]["photo_max_orig"]), $"{DateTime.UtcNow.Ticks} {response[0]["photo_max_orig"].Split('/').LastOrDefault()}");
+                            var avatar = await cdnClient.Add(await (new System.Net.Http.HttpClient()).GetByteArrayAsync(response[0]["photo_max_orig"]), $"{DateTime.UtcNow.Ticks}.{response[0]["photo_max_orig"].Split('.').LastOrDefault()}");
                             var user = new Users
                             {
                                 IsExternal = true,

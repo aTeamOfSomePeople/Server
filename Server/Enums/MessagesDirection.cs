@@ -5,5 +5,5 @@ using System.Web;
 
 namespace Server.Enums
 {
-    public enum MessagesDate { Before, After}
+    public enum MessagesDirection { Before, After}
 }
