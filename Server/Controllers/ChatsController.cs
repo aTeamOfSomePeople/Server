@@ -237,7 +237,7 @@ namespace Server.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "File is null");
             }
-            if (avatar.FileName.Any(e => Utils.ForbiddenSymbols.inFileName.Contains(e)))
+            if (!Utils.ValidateString.FileName(avatar.FileName))
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest, $"File name contains forbidden symbols");
             }
@@ -285,14 +285,60 @@ namespace Server.Controllers
 
                 db.Entry(chat).State = EntityState.Modified;
                 await db.SaveChangesAsync();
+
                 return new HttpStatusCodeResult(HttpStatusCode.OK);
             }
 
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
 
+        //[HttpPost]
+        //public async Task<ActionResult> DeletePublic(string accessToken, long? chatId)
+        //{
+        //    if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue)
+        //    {
+        //        return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
+        //    }
+        //    if (ModelState.IsValid)
+        //    {
+        //        var tokens = await TokensController.ValidToken(accessToken, db);
+        //        if (tokens == null)
+        //        {
+        //            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");
+        //        }
+
+        //        var chat = await db.Chats.FindAsync(chatId);
+        //        if (chat == null)
+        //        {
+        //            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Public is not exists");
+        //        }
+        //        if (chat.Type != Enums.ChatType.Public)
+        //        {
+        //            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "It's not a public");
+        //        }
+
+        //        var userInChat = await db.UsersInChats.FirstOrDefaultAsync(e => e.UserId == tokens.UserId && e.ChatId == chatId);
+        //        if (userInChat == null)
+        //        {
+        //            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You don't have access to this public");
+        //        }
+        //        if (!userInChat.CanWrite)
+        //        {
+        //            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Only admins can delete public");
+        //        }
+
+        //        Chats chats = await db.Chats.FindAsync(chatId);
+        //        db.Chats.Remove(chats);
+        //        await db.SaveChangesAsync();
+
+        //        return new HttpStatusCodeResult(HttpStatusCode.OK);
+        //    }
+
+        //    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
+        //}
+
         [HttpPost]
-        public async Task<ActionResult> DeletePublic(string accessToken, long? chatId)
+        public async Task<ActionResult> JoinThePublic(string accessToken, long? chatId)
         {
             if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue)
             {
@@ -309,25 +355,63 @@ namespace Server.Controllers
                 var chat = await db.Chats.FindAsync(chatId);
                 if (chat == null)
                 {
-                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Public is not exists");
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Chat is not exists");
                 }
                 if (chat.Type != Enums.ChatType.Public)
                 {
-                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "It's not a public");
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "It's not public");
+                }
+                if (await db.UsersInChats.AnyAsync(e => e.ChatId == chatId && e.UserId == tokens.UserId))
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You already in the public");
+                }
+                var userInChat = new UsersInChats()
+                {
+                    ChatId = chat.Id,
+                    UserId = tokens.Id,
+                    UnreadedMessages = 0,
+                    CanWrite = false
+                };
+                db.UsersInChats.Add(userInChat);
+                await db.SaveChangesAsync();
+
+                return new HttpStatusCodeResult(HttpStatusCode.OK);
+            }
+
+            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
+        }
+
+        [HttpPost]
+        public async Task<ActionResult> Leave(string accessToken, long? chatId)
+        {
+            if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
+            }
+            if (ModelState.IsValid)
+            {
+                var tokens = await TokensController.ValidToken(accessToken, db);
+                if (tokens == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");
                 }
 
-                var userInChat = await db.UsersInChats.FirstOrDefaultAsync(e => e.UserId == tokens.UserId && e.ChatId == chatId);
+                var chat = await db.Chats.FindAsync(chatId);
+                if (chat == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Chat is not exists");
+                }
+
+                if (chat.Type == Enums.ChatType.Dialog)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You can't leave from dialog");
+                }
+                var userInChat = await db.UsersInChats.FirstOrDefaultAsync(e => e.ChatId == chatId && e.UserId == tokens.UserId);
                 if (userInChat == null)
                 {
-                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You don't have access to this public");
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You already not in the chat");
                 }
-                if (!userInChat.CanWrite)
-                {
-                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Only admins can delete public");
-                }
-
-                Chats chats = await db.Chats.FindAsync(chatId);
-                db.Chats.Remove(chats);
+                db.UsersInChats.Remove(userInChat);
                 await db.SaveChangesAsync();
 
                 return new HttpStatusCodeResult(HttpStatusCode.OK);

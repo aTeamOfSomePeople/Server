@@ -91,10 +91,10 @@ namespace Server.Controllers
                             var avatar = await cdnClient.Add(await (new System.Net.Http.HttpClient()).GetByteArrayAsync(response[0]["photo_max_orig"]), $"{DateTime.UtcNow.Ticks}.{response[0]["photo_max_orig"].Split('.').LastOrDefault()}");
                             var user = new Users
                             {
-                                IsExternal = true,
                                 AccountId = VKUserId,
                                 Name = $"{response[0]["first_name"]} {response[0]["last_name"]}",
-                                Avatar = $"http://zerocdn.com/{avatar.ID}/{avatar.Name}"
+                                Avatar = $"http://zerocdn.com/{avatar.ID}/{avatar.Name}",
+                                ServiceId = serv.Id
                             };
                             db.Users.Add(user);
                             await db.SaveChangesAsync();
@@ -146,7 +146,7 @@ namespace Server.Controllers
                 var user = new Users()
                 {
                     Name = name,
-                    IsExternal = false,
+                    ServiceId = (await db.Services.FirstOrDefaultAsync(e => e.Name == "zeromessenger")).Id,
                     AccountId = account.Id
                 };
                 db.Users.Add(user);
@@ -175,7 +175,7 @@ namespace Server.Controllers
                 }
 
                 var user = await db.Users.FindAsync(tokens.UserId);
-                if (user.IsExternal)
+                if (user.ServiceId == (await db.Services.FirstOrDefaultAsync(e => e.Name == "zeromessenger")).Id)
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Allowed only for internal users");
                 }

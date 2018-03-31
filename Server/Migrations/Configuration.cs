@@ -25,7 +25,11 @@ namespace Server.Migrations
             //      new Person { FullName = "Brice Lambson" },
             //      new Person { FullName = "Rowan Miller" }
             //    );
-            context.Services.AddOrUpdate(new Models.ExternalServices { Name = "vk" }, new Models.ExternalServices { Name = "google" }, new Models.ExternalServices { Name = "instagram" });
+            context.Services.AddOrUpdate(
+                new Models.ExternalServices { Id = 1, Name = "vk" }, 
+                new Models.ExternalServices { Id = 2, Name = "google" }, 
+                new Models.ExternalServices { Id = 3, Name = "instagram" },
+                new Models.ExternalServices { Id = 4, Name = "zeromessenger" });
         }
     }
 }

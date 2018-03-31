@@ -19,11 +19,9 @@ namespace Server.Models
         [Required, Index("Account", IsUnique = true, Order = 0)]
         public long AccountId { get; set; }
 
-        [Required, Index("Account", IsUnique = true, Order = 1)]
-        public bool IsExternal { get; set; }
-        
-        [Required]
-        public int ServiceId { get; set; }
+        [Required, Index("Account", IsUnique = true, Order = 1), ForeignKey("Service")]
+        public long ServiceId { get; set; }
+        public virtual ExternalServices Service { get; set; }
 
         public string Description { get; set; }
     }   

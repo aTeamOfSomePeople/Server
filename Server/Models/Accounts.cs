@@ -11,10 +11,10 @@ namespace Server.Models
     {
         public long Id { get; set; }
 
-        [StringLength(20), Index("login", IsUnique = true), Required]
+        [StringLength(30), Index("login", IsUnique = true), Required]
         public string Login { get; set; }
 
-        [Required, DataType(DataType.Password)]
+        [Required]
         public string Password { get; set; }
 
         public bool IsDeleted { get; set; }
