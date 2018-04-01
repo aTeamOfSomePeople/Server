@@ -40,7 +40,9 @@ namespace Server.Models
 
         public System.Data.Entity.DbSet<Server.Models.DeletedMessages> DeletedMessages { get; set; }
 
-        public System.Data.Entity.DbSet<Server.Models.BannedUsers> BannedUsers { get; set; }
+        public System.Data.Entity.DbSet<Server.Models.BannedByUser> BannedByUser { get; set; }
+
+        public System.Data.Entity.DbSet<Server.Models.BannedByChat> BannedByChat { get; set; }
 
         public System.Data.Entity.DbSet<Server.Models.ExternalServices> Services { get; set; }
 

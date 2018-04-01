@@ -14,7 +14,7 @@ namespace Server.Controllers
     public class ChatsController : Controller
     {
         private ServerContext db = new ServerContext();
-        
+
         [HttpPost]
         public async Task<ActionResult> CreateDialog(string accessToken, long? secondUserId)
         {
@@ -37,7 +37,7 @@ namespace Server.Controllers
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Second user is not exists");
                 }
-                if (db.BannedUsers.Any(e => e.BannerId == secondUserId && e.BannedId == tokens.UserId))
+                if (db.BannedByUser.Any(e => e.BannerId == secondUserId && e.BannedId == tokens.UserId))
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "First user is banned by second user");
                 }
@@ -55,8 +55,8 @@ namespace Server.Controllers
                 };
                 db.Chats.Add(chat);
                 await db.SaveChangesAsync();
-                db.UsersInChats.Add(new UsersInChats() { ChatId = chat.Id, UserId = tokens.UserId, CanWrite = true, UnreadedMessages = 0});
-                db.UsersInChats.Add(new UsersInChats() { ChatId = chat.Id, UserId = secondUserId.Value, CanWrite = true, UnreadedMessages = 0});
+                db.UsersInChats.Add(new UsersInChats() { ChatId = chat.Id, UserId = tokens.UserId, CanWrite = true, UnreadedMessages = 0 });
+                db.UsersInChats.Add(new UsersInChats() { ChatId = chat.Id, UserId = secondUserId.Value, CanWrite = true, UnreadedMessages = 0 });
                 await db.SaveChangesAsync();
 
                 return new HttpStatusCodeResult(HttpStatusCode.OK);
@@ -90,7 +90,7 @@ namespace Server.Controllers
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "One or more users is not exists");
                 }
-                if (!userIdsTable.All(e => !db.BannedUsers.Any(z => z.BannerId == e && z.BannedId == tokens.UserId)))
+                if (!userIdsTable.All(e => !db.BannedByUser.Any(z => z.BannerId == e && z.BannedId == tokens.UserId)))
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "One or more users have banned the creator");
                 }
@@ -141,7 +141,7 @@ namespace Server.Controllers
                     {
                         return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "One or more users are not exists");
                     }
-                    if (!userIdsTable.All(e => !db.BannedUsers.Any(z => z.BannerId == e && z.BannedId == tokens.UserId)))
+                    if (!userIdsTable.All(e => !db.BannedByUser.Any(z => z.BannerId == e && z.BannedId == tokens.UserId)))
                     {
                         return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "One or more users have banned the creator");
                     }
@@ -180,14 +180,19 @@ namespace Server.Controllers
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
             }
 
-            var tokens = await TokensController.ValidToken(accessToken, db);
-            if (tokens == null)
+            if (!Utils.ValidateString.UserName(newName))
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Name is incorrect");
             }
 
             if (ModelState.IsValid)
             {
+                var tokens = await TokensController.ValidToken(accessToken, db);
+                if (tokens == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");
+                }
+
                 var chat = await db.Chats.FindAsync(chatId);
                 if (chat == null)
                 {
@@ -241,18 +246,20 @@ namespace Server.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest, $"File name contains forbidden symbols");
             }
-            if (!Utils.FilesExstensions.PosibleImageExtensions.Contains(avatar.FileName.Split('.').LastOrDefault()))
+            var avatarExtention = Utils.ValidateFile.GetImageExtention(avatar.InputStream);
+            if (!Utils.FilesExstensions.PosibleImageExtensions.Contains(avatarExtention))
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid file type");
-            }
-            var tokens = await TokensController.ValidToken(accessToken, db);
-            if (tokens == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");
             }
 
             if (ModelState.IsValid)
             {
+                var tokens = await TokensController.ValidToken(accessToken, db);
+                if (tokens == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");
+                }
+
                 var chat = await db.Chats.FindAsync(chatId);
                 if (chat == null)
                 {
@@ -272,7 +279,7 @@ namespace Server.Controllers
 
                 var file = new byte[avatar.ContentLength];
                 await avatar.InputStream.ReadAsync(file, 0, avatar.ContentLength);
-                var avatarFile = await cdnClient.Add(file, $"{DateTime.UtcNow.Ticks}.{avatar.FileName.Split('.').LastOrDefault()}");
+                var avatarFile = await cdnClient.Add(file, $"{DateTime.UtcNow.Ticks}.{avatarExtention}");
                 try
                 {
                     if (chat.Avatar != null)
@@ -361,10 +368,17 @@ namespace Server.Controllers
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "It's not public");
                 }
+
+                if (await db.BannedByChat.AnyAsync(e => e.BannerId == chat.Id && e.BannedId == tokens.UserId))
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.Forbidden, "You are banned in this public");
+                }
+
                 if (await db.UsersInChats.AnyAsync(e => e.ChatId == chatId && e.UserId == tokens.UserId))
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You already in the public");
                 }
+
                 var userInChat = new UsersInChats()
                 {
                     ChatId = chat.Id,
@@ -376,6 +390,103 @@ namespace Server.Controllers
                 await db.SaveChangesAsync();
 
                 return new HttpStatusCodeResult(HttpStatusCode.OK);
+            }
+
+            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
+        }
+
+        public async Task<ActionResult> GetUsers(string accessToken, long? chatId, int? count, int start = 0)
+        {
+            if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
+            }
+            if (start < 0)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Start must be greater than zero");
+            }
+            if (!count.HasValue)
+            {
+                count = 50;
+            }
+            if (count <= 0)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Count must be greater than zero");
+            }
+
+            if (count > 50)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Count must be lower or equal to 50");
+            }
+
+            if (ModelState.IsValid)
+            {
+                var tokens = await db.Tokens.FirstOrDefaultAsync(e => e.AccessToken == accessToken);
+                if (tokens == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Token is invalid");
+                }
+
+                var chat = await db.Chats.FindAsync(chatId);
+                if (chat == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Chat is not exists");
+                }
+
+                if (!await db.UsersInChats.AnyAsync(e => e.UserId == tokens.UserId && e.ChatId == chatId))
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You can't get users from this chat");
+                }
+
+                return Json(db.UsersInChats.Where(e => e.ChatId == chatId).Skip(start).Take(count.Value).Select(e => e.UserId), JsonRequestBehavior.AllowGet);
+            }
+
+            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
+        }
+
+        [HttpPost]
+        public async Task<ActionResult> RemoveUserFromGroup(string accessToken, long? chatId, long? userId)
+        {
+            if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue || !userId.HasValue)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
+            }
+
+            if (ModelState.IsValid)
+            {
+                var tokens = await db.Tokens.FirstOrDefaultAsync(e => e.AccessToken == accessToken);
+                if (tokens == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Token is invalid");
+                }
+
+                var chat = await db.Chats.FindAsync(chatId);
+                if (chat == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Chat is not exists");
+                }
+                
+                if (chat.Type != Enums.ChatType.Group)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.Forbidden, "This chat is not a group");
+                }
+
+                if (!await db.UsersInChats.AnyAsync(e => e.UserId == tokens.UserId && e.ChatId == chatId))
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.Forbidden, "You don't have access to this public");
+                }
+
+                var userInChat = await db.UsersInChats.FirstOrDefaultAsync(e => e.UserId == userId && e.ChatId == chatId);
+                if (userInChat == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.NotFound, "User don't in this chat");
+                }
+
+                db.UsersInChats.Remove(userInChat);
+                await db.SaveChangesAsync();
+
+                return new HttpStatusCodeResult(HttpStatusCode.OK);
+                
             }
 
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
@@ -406,15 +517,265 @@ namespace Server.Controllers
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You can't leave from dialog");
                 }
+
                 var userInChat = await db.UsersInChats.FirstOrDefaultAsync(e => e.ChatId == chatId && e.UserId == tokens.UserId);
                 if (userInChat == null)
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You already not in the chat");
                 }
+
                 db.UsersInChats.Remove(userInChat);
                 await db.SaveChangesAsync();
 
                 return new HttpStatusCodeResult(HttpStatusCode.OK);
+            }
+
+            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
+        }
+
+        [HttpPost]
+        public async Task<ActionResult> BanUser(string accessToken, long? chatId, long? userId)
+        {
+            if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue || !userId.HasValue)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
+            }
+
+            if (ModelState.IsValid)
+            {
+                var tokens = await db.Tokens.FirstOrDefaultAsync(e => e.AccessToken == accessToken);
+                if (tokens == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Token is invalid");
+                }
+
+                var chat = await db.Chats.FindAsync(chatId);
+                if (chat == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Chat is not exists");
+                }
+
+                if (chat.Type == Enums.ChatType.Dialog)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.Forbidden, "You can't ban user in dialog");
+                }
+
+                if (!await db.UsersInChats.AnyAsync(e => e.UserId == tokens.UserId && e.ChatId == chatId))
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.Forbidden, "You don't have access to this chat");
+                }
+
+                if (await db.BannedByChat.AnyAsync(e => e.BannedId == userId && e.BannerId == chatId))
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.NotFound, "User already banned in this chat");
+                }
+
+                var bannedByChat = new BannedByChat()
+                {
+                    BannedId = userId.Value,
+                    BannerId = chatId.Value
+                };
+
+                db.BannedByChat.Add(bannedByChat);
+                await db.SaveChangesAsync();
+
+                return new HttpStatusCodeResult(HttpStatusCode.OK);
+
+            }
+
+            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
+        }
+
+        [HttpPost]
+        public async Task<ActionResult> UnBanUser(string accessToken, long? chatId, long? userId)
+        {
+            if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue || !userId.HasValue)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
+            }
+
+            if (ModelState.IsValid)
+            {
+                var tokens = await db.Tokens.FirstOrDefaultAsync(e => e.AccessToken == accessToken);
+                if (tokens == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Token is invalid");
+                }
+
+                var chat = await db.Chats.FindAsync(chatId);
+                if (chat == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.NotFound, "Chat is not exists");
+                }
+
+                if (chat.Type == Enums.ChatType.Dialog)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.Forbidden, "You can't unban user in dialog");
+                }
+
+                if (!await db.UsersInChats.AnyAsync(e => e.UserId == tokens.UserId && e.ChatId == chatId))
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.Forbidden, "You don't have access to this chat");
+                }
+
+                var bannedByChat = await db.BannedByChat.FirstOrDefaultAsync(e => e.BannedId == userId && e.BannerId == chatId);
+                if (bannedByChat == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.NotFound, "User is not banned in this chat");
+                }
+
+                db.BannedByChat.Remove(bannedByChat);
+                await db.SaveChangesAsync();
+
+                return new HttpStatusCodeResult(HttpStatusCode.OK);
+
+            }
+
+            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
+        }
+
+        public async Task<ActionResult> GetBannedUsers(string accessToken, long? chatId, int? count, int start = 0)
+        {
+            if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
+            }
+
+            if (start < 0)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Start must be greater than zero");
+            }
+            if (!count.HasValue)
+            {
+                count = 50;
+            }
+            if (count <= 0)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Count must be greater than zero");
+            }
+
+            if (count > 50)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Count must be lower or equal to 50");
+            }
+
+            if (ModelState.IsValid)
+            {
+                var tokens = await db.Tokens.FirstOrDefaultAsync(e => e.AccessToken == accessToken);
+                if (tokens == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Token is invalid");
+                }
+
+                var chat = await db.Chats.FindAsync(chatId);
+                if (chat == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Chat is not exists");
+                }
+
+                if (!await db.UsersInChats.AnyAsync(e => e.UserId == tokens.UserId && e.ChatId == chatId))
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You can't get banned users from this chat");
+                }
+
+                return Json(await db.BannedByChat.Where(e => e.BannerId == chatId).Skip(start).Take(count.Value).Select(e => e.BannedId).ToArrayAsync(), JsonRequestBehavior.AllowGet);
+            }
+
+            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
+        }
+
+        [HttpPost]
+        public async Task<ActionResult> InviteToGroup(string accessToken, long? chatId, long? userId)
+        {
+            if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue || !userId.HasValue)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
+            }
+
+            if (ModelState.IsValid)
+            {
+                var tokens = await db.Tokens.FirstOrDefaultAsync(e => e.AccessToken == accessToken);
+                if (tokens == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Token is invalid");
+                }
+
+                var chat = await db.Chats.FindAsync(chatId);
+                if (chat == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Chat is not exists");
+                }
+
+                if (!await db.UsersInChats.AnyAsync(e => e.UserId == tokens.UserId && e.ChatId == chatId && e.CanWrite))
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You can't invite to this chat");
+                }
+
+                if (await db.BannedByUser.AnyAsync(e => e.BannerId == userId && e.BannedId == tokens.UserId))
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.Forbidden, "You are banned by this user");
+                }
+
+                if (await db.BannedByChat.AnyAsync(e => e.BannerId == chat.Id && e.BannedId == userId))
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.Forbidden, "User is banned in this group");
+                }
+
+                if (await db.UsersInChats.AnyAsync(e => e.ChatId == chatId && e.UserId == userId))
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "User already in the group");
+                }
+
+                var userInChat = new UsersInChats()
+                {
+                    ChatId = chat.Id,
+                    UserId = userId.Value,
+                    UnreadedMessages = 0,
+                    CanWrite = false
+                };
+                db.UsersInChats.Add(userInChat);
+                await db.SaveChangesAsync();
+
+                return new HttpStatusCodeResult(HttpStatusCode.OK);
+            }
+
+            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
+        }
+
+        public async Task<ActionResult> FindPublicByName(string accessToken, string name, int? count, int start = 0)
+        {
+            if (String.IsNullOrWhiteSpace(accessToken) || String.IsNullOrWhiteSpace(name))
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
+            }
+
+            if (start < 0)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Start must be greater than zero");
+            }
+            if (!count.HasValue)
+            {
+                count = 50;
+            }
+            if (count <= 0)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Count must be greater than zero");
+            }
+
+            if (count > 50)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Count must be lower or equal to 50");
+            }
+
+            if (ModelState.IsValid)
+            {
+                var tokens = await db.Tokens.FirstOrDefaultAsync(e => e.AccessToken == accessToken);
+                if (tokens == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Token is invalid");
+                }
+
+                return Json(await db.Chats.Where(e => e.Type == Enums.ChatType.Public && e.Name.StartsWith(name)).Skip(start).Take(count.Value).Select(e => e.Id).ToArrayAsync(), JsonRequestBehavior.AllowGet);
             }
 
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");

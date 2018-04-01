@@ -185,7 +185,8 @@
     <Compile Include="Hubs\ChatHub.cs" />
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\Accounts.cs" />
-    <Compile Include="Models\BannedUsers.cs" />
+    <Compile Include="Models\BannedByChat.cs" />
+    <Compile Include="Models\BannedByUser.cs" />
     <Compile Include="Models\DeletedMessages.cs" />
     <Compile Include="Models\ExternalAccounts.cs" />
     <Compile Include="Models\ExternalServices.cs" />
@@ -240,7 +241,8 @@
     <Compile Include="Utils\AuthorizeResponse.cs" />
     <Compile Include="Utils\CheckTokenResponse.cs" />
     <Compile Include="Utils\FilesExstensions.cs" />
-    <Compile Include="Utils\ForbiddenSymbols.cs" />
+    <Compile Include="Utils\ValidateFile.cs" />
+    <Compile Include="Utils\ValidateString.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Areas\HelpPage\HelpPage.css" />
