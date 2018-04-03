@@ -9,3 +9,29 @@
   <li>Запустить сервер</li>
   <li>Сервер запущен, Вы замечательны!</li>
 </ol>
+<br>
+<h1>Методы API</h1>
+<ul>
+ <li><h3>Accounts</h3></li>
+ <ul>
+  <li><h5>Auth</h5></li>
+  <li><h5>OAuth</h5></li>
+  <li><h5>Register</h5></li>
+  <li><h5>Delete</h5></li>
+ </ul>
+ <li><h3>Users</h3></li>
+  <ul>
+  <li><h5></h5></li>
+ </ul>
+ <li><h3>Chats</h3></li>
+  <ul>
+  <li><h5></h5></li>
+ </ul>
+ <li><h3>Messages</h3></li>
+  <ul>
+  <li><h5></h5></li>
+ </ul>
+ <li><h3>Files</h3></li>
+  <ul>
+  <li><h5></h5></li>
+ </ul>
