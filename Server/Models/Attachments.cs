@@ -11,15 +11,14 @@ namespace Server.Models
     {
         public long Id { get; set; }
 
-        [Required]
-        public string Link { get; set; }
+        [Required, ForeignKey("UploadedFiles")]
+        public long FileId { get; set; }
+        public virtual UploadedFiles UploadedFiles { get; set; }
 
         [Required, ForeignKey("Message")]
         public long MessageId { get; set; }
         public virtual Messages Message { get; set; }
 
-        public long FileSize { get; set; }
 
-        public long CDNId { get; set; }
     }
 }

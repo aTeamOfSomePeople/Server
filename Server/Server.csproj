@@ -177,6 +177,7 @@
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="Controllers\AccountsController.cs" />
     <Compile Include="Controllers\ChatsController.cs" />
+    <Compile Include="Controllers\FilesController.cs" />
     <Compile Include="Controllers\MessagesController.cs" />
     <Compile Include="Controllers\TokensController.cs" />
     <Compile Include="Controllers\UsersController.cs" />
@@ -192,6 +193,7 @@
     <Compile Include="Models\ExternalServices.cs" />
     <Compile Include="Models\MutedUsers.cs" />
     <Compile Include="Models\Tokens.cs" />
+    <Compile Include="Models\UploadedFiles.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -301,6 +303,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
+    <Folder Include="Views\Files\" />
     <Folder Include="Views\Messages\" />
     <Folder Include="Views\Tokens\" />
   </ItemGroup>

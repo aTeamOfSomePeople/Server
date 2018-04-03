@@ -238,14 +238,16 @@ namespace Server.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
             }
+
             if (avatar == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "File is null");
             }
-            if (!Utils.ValidateString.FileName(avatar.FileName))
+            if (avatar.ContentLength > 2097152)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, $"File name contains forbidden symbols");
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Too big file");
             }
+
             var avatarExtention = Utils.ValidateFile.GetImageExtention(avatar.InputStream);
             if (!Utils.FilesExstensions.PosibleImageExtensions.Contains(avatarExtention))
             {

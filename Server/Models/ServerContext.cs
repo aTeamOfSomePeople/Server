@@ -51,5 +51,7 @@ namespace Server.Models
         public System.Data.Entity.DbSet<Server.Models.ExternalAccounts> ExternalAccounts { get; set; }
 
         public System.Data.Entity.DbSet<Server.Models.Tokens> Tokens { get; set; }
+
+        public System.Data.Entity.DbSet<Server.Models.UploadedFiles> UploadedFiles { get; set; }
     }
 }

@@ -79,6 +79,7 @@ namespace Server.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
             }
+
             if (avatar == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "File is null");
@@ -87,10 +88,7 @@ namespace Server.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Too big file");
             }
-            if (!Utils.ValidateString.FileName(avatar.FileName))
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, $"File name contains forbidden symbols");
-            }
+
             var avatarExtention = Utils.ValidateFile.GetImageExtention(avatar.InputStream);
             if (!Utils.FilesExstensions.PosibleImageExtensions.Contains(avatarExtention))
             {

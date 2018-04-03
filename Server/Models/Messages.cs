@@ -11,7 +11,6 @@ namespace Server.Models
     {
         public long Id { get; set; }
 
-        [Required]
         public string Text { get; set; }
 
         [Required]
