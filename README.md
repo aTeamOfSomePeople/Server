@@ -77,14 +77,60 @@
  </li>
  <li><h2>Users</h2>
   <ul>
-  <li><h3>Auth</h3><br>
+  <li><h3>ChangeName</h3><br>
     HTTP POST<br>
-    accounts/auth/<br>
+    users/changename<br>
     <h4>Параметры</h4>
     <ul>
-    <li>login</li>
-    <li>password</li>
+    <li>accesstoken</li>
+    <li>newname</li>
     </ul>
+    </li>
+   <li><h3>ChangeDescription</h3><br>
+    HTTP POST<br>
+    users/changedescription<br>
+    <h4>Параметры</h4>
+    <ul>
+    <li>accesstoken</li>
+    <li>newdescription</li>
+    </ul>
+    </li>
+   <li><h3>ChangeAvatar</h3><br>
+    HTTP POST<br>
+    users/changeavatar<br>
+    <h4>Параметры</h4>
+    <ul>
+    <li>accesstoken</li>
+    <li>fileid</li>
+    </ul>
+    </li>
+   <li><h3>BanUser</h3><br>
+    HTTP POST<br>
+    users/banuser<br>
+    <h4>Параметры</h4>
+    <ul>
+    <li>accesstoken</li>
+    <li>userid</li>
+    </ul>
+   </li>
+   <li><h3>UnBanUser</h3><br>
+    HTTP POST<br>
+    users/unbanuser<br>
+    <h4>Параметры</h4>
+    <ul>
+    <li>accesstoken</li>
+    <li>userid</li>
+    </ul>
+   </li>
+   <li><h3>GetBannedUsers</h3><br>
+    HTTP GET<br>
+    users/getbannedusers<br>
+    <h4>Параметры</h4>
+    <ul>
+    <li>accesstoken</li>
+    <li>count</li>
+     <li>start</li>
+    </ul>
     <h4>Возвращаемое значение</h4>
     {<br>
       "accessToken":"f15d0a1db83d4e60a1ba4bae45968e90",<br>
@@ -92,89 +138,15 @@
       "userId":2<br>
     }
    </li>
-   <li><h3>Auth</h3><br>
-    HTTP POST<br>
-    accounts/auth/<br>
+   <li><h3>FindUsersByName</h3><br>
+    HTTP GET<br>
+    users/findusersbyname<br>
     <h4>Параметры</h4>
     <ul>
-    <li>login</li>
-    <li>password</li>
-    </ul>
-    <h4>Возвращаемое значение</h4>
-    {<br>
-      "accessToken":"f15d0a1db83d4e60a1ba4bae45968e90",<br>
-      "refreshToken":"1397ff052f004f6f8169246f3fc3deb5",<br>
-      "userId":2<br>
-    }
-   </li>
-   <li><h3>Auth</h3><br>
-    HTTP POST<br>
-    accounts/auth/<br>
-    <h4>Параметры</h4>
-    <ul>
-    <li>login</li>
-    <li>password</li>
-    </ul>
-    <h4>Возвращаемое значение</h4>
-    {<br>
-      "accessToken":"f15d0a1db83d4e60a1ba4bae45968e90",<br>
-      "refreshToken":"1397ff052f004f6f8169246f3fc3deb5",<br>
-      "userId":2<br>
-    }
-   </li>
-   <li><h3>Auth</h3><br>
-    HTTP POST<br>
-    accounts/auth/<br>
-    <h4>Параметры</h4>
-    <ul>
-    <li>login</li>
-    <li>password</li>
-    </ul>
-    <h4>Возвращаемое значение</h4>
-    {<br>
-      "accessToken":"f15d0a1db83d4e60a1ba4bae45968e90",<br>
-      "refreshToken":"1397ff052f004f6f8169246f3fc3deb5",<br>
-      "userId":2<br>
-    }
-   </li>
-   <li><h3>Auth</h3><br>
-    HTTP POST<br>
-    accounts/auth/<br>
-    <h4>Параметры</h4>
-    <ul>
-    <li>login</li>
-    <li>password</li>
-    </ul>
-    <h4>Возвращаемое значение</h4>
-    {<br>
-      "accessToken":"f15d0a1db83d4e60a1ba4bae45968e90",<br>
-      "refreshToken":"1397ff052f004f6f8169246f3fc3deb5",<br>
-      "userId":2<br>
-    }
-   </li>
-   <li><h3>Auth</h3><br>
-    HTTP POST<br>
-    accounts/auth/<br>
-    <h4>Параметры</h4>
-    <ul>
-    <li>login</li>
-    <li>password</li>
-    </ul>
-    <h4>Возвращаемое значение</h4>
-    {<br>
-      "accessToken":"f15d0a1db83d4e60a1ba4bae45968e90",<br>
-      "refreshToken":"1397ff052f004f6f8169246f3fc3deb5",<br>
-      "userId":2<br>
-    }
-   </li>
-   <li><h3>Auth</h3><br>
-    HTTP POST<br>
-    accounts/auth/<br>
-    <h4>Параметры</h4>
-    <ul>
-    <li>login</li>
-    <li>password</li>
-    </ul>
+    <li>name</li>
+    <li>count</li>
+     <li>start</li>
+    </ul>
     <h4>Возвращаемое значение</h4>
     {<br>
       "accessToken":"f15d0a1db83d4e60a1ba4bae45968e90",<br>
@@ -482,14 +454,13 @@
  </ul></li>
  <li><h2>Tokens</h2><br>
  <ul>
-  <li><h3>Auth</h3><br>
+  <li><h3>RefreshTokens</h3><br>
     HTTP POST<br>
-    accounts/auth/<br>
+    tokens/refreshtokens<br>
     <h4>Параметры</h4>
     <ul>
-    <li>login</li>
-    <li>password</li>
-    </ul>
+    <li>refreshtoken</li>
+    </ul>
     <h4>Возвращаемое значение</h4>
     {<br>
       "accessToken":"f15d0a1db83d4e60a1ba4bae45968e90",<br>
@@ -497,14 +468,13 @@
       "userId":2<br>
     }
    </li>
-  <li><h3>Auth</h3><br>
-    HTTP POST<br>
-    accounts/auth/<br>
+  <li><h3>CheckToken</h3><br>
+    HTTP GET<br>
+    tokens/checktoken<br>
     <h4>Параметры</h4>
     <ul>
-    <li>login</li>
-    <li>password</li>
-    </ul>
+    <li>accesstoken</li>
+    </ul>
     <h4>Возвращаемое значение</h4>
     {<br>
       "accessToken":"f15d0a1db83d4e60a1ba4bae45968e90",<br>
