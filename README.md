@@ -17,7 +17,7 @@
   <ul>
    <li><h3>Auth</h3><br>
     HTTP POST<br>
-    accounts/auth/<br>
+    accounts/auth<br>
     <h4>Параметры</h4>
     <ul>
     <li>login</li>
@@ -32,7 +32,7 @@
    </li>
    <li><h3>OAuth</h3>
     HTTP POST<br>
-    accounts/oauth/<br>
+    accounts/oauth<br>
     <h4>Параметры</h4>
     <ul>
     <li>accesstoken</li>
@@ -47,7 +47,7 @@
    </li>
    <li><h3>Register</h3>
     HTTP POST<br>
-    accounts/register/<br>
+    accounts/register<br>
     <h4>Параметры</h4>
     <ul>
      <li>login</li>
@@ -57,13 +57,23 @@
    </li>
    <li><h3>Delete</h3>
      HTTP POST<br>
-    accounts/delete/<br>
+    accounts/delete<br>
     <h4>Параметры</h4>
     <ul>
      <li>accesstoken</li>
     </ul>
    </li>
-  </ul>
+   <li><h3>ChangePassword</h3><br>
+    HTTP POST<br>
+    accounts/changepassword<br>
+    <h4>Параметры</h4>
+    <ul>
+    <li>accesstoken</li>
+    <li>oldpassword</li>
+    <li>newpassword</li>
+    </ul>
+   </li>
+  </ul>
  </li>
  <li><h2>Users</h2>
   <ul>
