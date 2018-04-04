@@ -73,28 +73,12 @@ namespace Server.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> ChangeAvatar(string accessToken, HttpPostedFileBase avatar)
+        public async Task<ActionResult> ChangeAvatar(string accessToken, long? fileId)
         {
-            if (String.IsNullOrWhiteSpace(accessToken))
+            if (String.IsNullOrWhiteSpace(accessToken) || !fileId.HasValue)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
             }
-
-            if (avatar == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "File is null");
-            }
-            if (avatar.ContentLength > 2097152)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Too big file");
-            }
-
-            var avatarExtention = Utils.ValidateFile.GetImageExtention(avatar.InputStream);
-            if (!Utils.FilesExstensions.PosibleImageExtensions.Contains(avatarExtention))
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid file type");
-            }
-            
 
             if (ModelState.IsValid)
             {
@@ -106,19 +90,17 @@ namespace Server.Controllers
                 var user = await db.Users.FindAsync(tokens.UserId);
                 var cdnClient = (new ZeroCdnClients.CdnClientsFactory(Properties.Resources.ZeroCDNUsername, Properties.Resources.ZeroCDNKey)).Files;
 
-                var file = new byte[avatar.ContentLength];
-                await avatar.InputStream.ReadAsync(file, 0, avatar.ContentLength);
-                var avatarFile = await cdnClient.Add(file, $"{DateTime.UtcNow.Ticks}.{avatarExtention}");
-                try
+                if (!await db.UploadedFiles.AnyAsync(e => e.Id == fileId))
                 {
-                    if (user.Avatar != null)
-                    {
-                        await cdnClient.Remove(long.Parse(user.Avatar.Split('/')[3]));
-                    }
+                    return new HttpStatusCodeResult(HttpStatusCode.NotFound, "File is not exists");
                 }
-                catch { }
-                user.Avatar = $"http://zerocdn.com/{avatarFile.ID}/{avatarFile.Name}";
 
+                if (user.Avatar != null)
+                {
+                    await FilesController.RemoveFile(user.Avatar, db);
+                }
+
+                user.Avatar = fileId;
                 db.Entry(user).State = EntityState.Modified;
                 await db.SaveChangesAsync();
 

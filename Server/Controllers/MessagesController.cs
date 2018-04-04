@@ -16,27 +16,26 @@ namespace Server.Controllers
         private ServerContext db = new ServerContext();
 
         [HttpPost]
-        public async Task<ActionResult> SendMessage(string accessToken, long? chatId, string text, HttpFileCollectionBase files)
+        public async Task<ActionResult> SendMessage(string accessToken, long? chatId, string text, string fileIds)
         {
-            if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue || !(!String.IsNullOrWhiteSpace(text) || files != null))
+            if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue || !(!String.IsNullOrWhiteSpace(text) || !String.IsNullOrWhiteSpace(fileIds)))
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
             }
-            return new HttpStatusCodeResult(HttpStatusCode.OK);
-            if (files != null)
-            {
-                foreach (HttpPostedFileBase file in files)
-                {
-                    var fileExtension = Utils.ValidateFile.GetImageExtention(file.InputStream);
-                    if (!Utils.FilesExstensions.PosibleImageExtensions.Contains(fileExtension))
-                    {
-                        return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Only images can be uploaded");
-                    }
 
-                    if (file.ContentLength > 8388608)
+            var ids = new List<long>();
+            if (!String.IsNullOrWhiteSpace(fileIds))
+            {
+                try
+                {
+                    foreach (var e in fileIds.Split(',', ' '))
                     {
-                        return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Too big file");
+                        ids.Add(long.Parse(e));
                     }
+                }
+                catch
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Incorrect ids");
                 }
             }
 
@@ -70,22 +69,17 @@ namespace Server.Controllers
                 db.Messages.Add(message);
                 await db.SaveChangesAsync();
 
-                if (files != null)
+                if (ids != null)
                 {
-                    var cdnClient = (new ZeroCdnClients.CdnClientsFactory(Properties.Resources.ZeroCDNUsername, Properties.Resources.ZeroCDNKey)).Files;
-                    foreach (HttpPostedFileBase file in files)
+                    foreach (var e in ids)
                     {
-                        var fileBytes = new byte[file.ContentLength];
-                        await file.InputStream.ReadAsync(fileBytes, 0, file.ContentLength);
-                        var uploadedFile = await cdnClient.Add(fileBytes, $"{DateTime.UtcNow.Ticks}.{Utils.ValidateFile.GetImageExtention(file.InputStream)}");
-                        var attachment = new Attachments()
+                        if (!await db.UploadedFiles.AnyAsync(z => z.Id == e))
                         {
-                            MessageId = message.Id,
-                            //Link = $"http://zerocdn.com/{uploadedFile.ID}/{uploadedFile.Name}",
-                            //FileSize = uploadedFile.Size
-                        };
-                        db.Attachments.Add(attachment);
+                            return new HttpStatusCodeResult(HttpStatusCode.NotFound, "One or more files is not exists");
+                        }
                     }
+
+                    ids.ForEach(e => db.Attachments.Add(new Attachments() {MessageId = message.Id, FileId = e }));
                     await db.SaveChangesAsync();
                 }
 

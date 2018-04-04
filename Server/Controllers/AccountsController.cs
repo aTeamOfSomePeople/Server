@@ -82,18 +82,16 @@ namespace Server.Controllers
                             account.Service = serv.Id;
                             account.IsDeleted = false;
                             db.ExternalAccounts.Add(account);
-
-                            var cdnClient = (new ZeroCdnClients.CdnClientsFactory(Properties.Resources.ZeroCDNUsername, Properties.Resources.ZeroCDNKey)).Files;
-
+                            
                             var httpResponse = await (new System.Net.Http.HttpClient()).GetAsync(String.Format("https://api.vk.com/method/users.get?user_ids={0}&fields=photo_max_orig&access_token={1}&client_secret={2}&v=5.73", VKUserId, Properties.Resources.VKAccessToken, Properties.Resources.VKSecretKey));
                             var stringResponse = await httpResponse.Content.ReadAsStringAsync();
                             var response = Newtonsoft.Json.JsonConvert.DeserializeObject<VKUserInfoResponse>(stringResponse).response;
-                            var avatar = await cdnClient.Add(await (new System.Net.Http.HttpClient()).GetByteArrayAsync(response[0]["photo_max_orig"]), $"{DateTime.UtcNow.Ticks}.{response[0]["photo_max_orig"].Split('.').LastOrDefault()}");
+                            var fileId = await FilesController.UploadFile(response[0]["photo_max_orig"], db);
                             var user = new Users
                             {
                                 AccountId = VKUserId,
                                 Name = $"{response[0]["first_name"]} {response[0]["last_name"]}",
-                                Avatar = $"http://zerocdn.com/{avatar.ID}/{avatar.Name}",
+                                Avatar = fileId.Value,
                                 ServiceId = serv.Id
                             };
                             db.Users.Add(user);
@@ -114,7 +112,8 @@ namespace Server.Controllers
                         return Json(null);
                 }
             }
-            catch { }
+            catch(Exception e){ System.Console.WriteLine(e.Message);
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, e.Message); }
 
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }

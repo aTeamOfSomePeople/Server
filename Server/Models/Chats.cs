@@ -21,6 +21,8 @@ namespace Server.Models
         [Required]
         public Enums.ChatType Type { get; set; }
 
-        public string Avatar { get; set; }
+        [ForeignKey("UploadedFiles")]
+        public long? Avatar { get; set; }
+        public virtual UploadedFiles UploadedFiles { get; set; }
     }
 }

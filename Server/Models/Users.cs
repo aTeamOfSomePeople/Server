@@ -14,7 +14,9 @@ namespace Server.Models
         [Required]
         public string Name { get; set; }
 
-        public string Avatar { get; set; }
+        [ForeignKey("UploadedFiles")]
+        public long? Avatar { get; set; }
+        public virtual UploadedFiles UploadedFiles { get; set; }
 
         [Required, Index("Account", IsUnique = true, Order = 0)]
         public long AccountId { get; set; }
