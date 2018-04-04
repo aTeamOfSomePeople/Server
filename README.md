@@ -45,8 +45,24 @@
       "userId":2<br>
     }
    </li>
-   <li><h3>Register</h3></li>
-   <li><h3>Delete</h3></li>
+   <li><h3>Register</h3>
+    HTTP POST<br>
+    accounts/register/<br>
+    <h4>Параметры</h4>
+    <ul>
+     <li>login</li>
+     <li>password</li>
+     <li>name</li>
+    </ul>
+   </li>
+   <li><h3>Delete</h3>
+     HTTP POST<br>
+    accounts/delete/<br>
+    <h4>Параметры</h4>
+    <ul>
+     <li>accesstoken</li>
+    </ul>
+   </li>
   </ul>
  </li>
  <li><h2>Users</h2>
