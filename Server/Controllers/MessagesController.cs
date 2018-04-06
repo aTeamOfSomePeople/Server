@@ -88,8 +88,7 @@ namespace Server.Controllers
 
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
-
-        [HttpPost, RequireHttps]
+        
         public async Task<ActionResult> GetMessages(string accessToken, long? chatId, Enums.MessagesDirection? direction, DateTime? date, int? count)
         {
             if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue || !direction.HasValue)
@@ -138,9 +137,9 @@ namespace Server.Controllers
                 switch (direction)
                 {
                     case Enums.MessagesDirection.After:
-                        return Json(await db.Messages.Where(e => e.ChatId == chatId && e.Date > date).Take(count.Value).ToArrayAsync());
+                        return Json(await db.Messages.Where(e => e.ChatId == chatId && e.Date > date).Take(count.Value).Select(e => new { id = e.Id, text = e.Text, chatId = e.ChatId, userId = e.UserId, isReaded = e.IsReaded, date = e.Date}).ToArrayAsync());
                     case Enums.MessagesDirection.Before:
-                        return Json(await db.Messages.Where(e => e.ChatId == chatId && e.Date < date).Reverse().Take(count.Value).ToArrayAsync());
+                        return Json(await db.Messages.Where(e => e.ChatId == chatId && e.Date < date).Reverse().Take(count.Value).Select(e => new { id = e.Id, text = e.Text, chatId = e.ChatId, userId = e.UserId, isReaded = e.IsReaded, date = e.Date }).ToArrayAsync());
                 }
             }
 

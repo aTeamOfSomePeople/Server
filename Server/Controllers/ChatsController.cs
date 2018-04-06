@@ -42,10 +42,7 @@ namespace Server.Controllers
 
                 var chat = await db.Chats.FirstOrDefaultAsync(e => e.Id == chatId);
                 var response = new Dictionary<string, string>();
-                if (separatedFields.Count == 0 || separatedFields.Contains("id"))
-                {
-                    response.Add("id", chat.Id.ToString());
-                }
+                response.Add("id", chat.Id.ToString());
                 if (separatedFields.Count == 0 || separatedFields.Contains("name"))
                 {
                     if (chat.Type == Enums.ChatType.Dialog)
@@ -138,9 +135,9 @@ namespace Server.Controllers
         }
 
         [HttpPost, RequireHttps]
-        public async Task<ActionResult> CreateGroup(string accessToken, string name, long[] userIds)
+        public async Task<ActionResult> CreateGroup(string accessToken, string name, string userIds)
         {
-            if (String.IsNullOrWhiteSpace(accessToken) || String.IsNullOrWhiteSpace(name) || userIds == null)
+            if (String.IsNullOrWhiteSpace(accessToken) || String.IsNullOrWhiteSpace(name) || String.IsNullOrWhiteSpace(userIds))
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
             }
@@ -151,9 +148,20 @@ namespace Server.Controllers
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");
                 }
-
-                var userIdsTable = new HashSet<long>(userIds);
+                var userIdsTable = new HashSet<long>();
+                try
+                {
+                    foreach (var e in userIds.Split(new char[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        userIdsTable.Add(long.Parse(e));
+                    }
+                }
+                catch
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Incorrect user ids");
+                }
                 userIdsTable.Add(tokens.UserId);
+
                 if (userIdsTable.Count < 3)
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Requires at least 3 users");
@@ -189,7 +197,7 @@ namespace Server.Controllers
         }
 
         [HttpPost, RequireHttps]
-        public async Task<ActionResult> CreatePublic(string accessToken, string name, long[] userIds)
+        public async Task<ActionResult> CreatePublic(string accessToken, string name, string userIds)
         {
             if (String.IsNullOrWhiteSpace(accessToken) || String.IsNullOrWhiteSpace(name))
             {
@@ -206,7 +214,18 @@ namespace Server.Controllers
                 HashSet<long> userIdsTable = null;
                 if (userIds != null)
                 {
-                    userIdsTable = new HashSet<long>(userIds);
+                    userIdsTable = new HashSet<long>();
+                    try
+                    {
+                        foreach (var e in userIds.Split(new char[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries))
+                        {
+                            userIdsTable.Add(long.Parse(e));
+                        }
+                    }
+                    catch
+                    {
+                        return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Incorrect user ids");
+                    }
                     userIdsTable.Add(tokens.UserId);
 
                     if (!userIdsTable.All(e => db.Users.Find(e) != null))
@@ -499,7 +518,7 @@ namespace Server.Controllers
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You can't get users from this chat");
                 }
 
-                return Json(db.UsersInChats.Where(e => e.ChatId == chatId).Skip(start).Take(count.Value).Select(e => e.UserId), JsonRequestBehavior.AllowGet);
+                return Json(db.UsersInChats.Where(e => e.ChatId == chatId).OrderBy(e => e.Id).Skip(start).Take(count.Value).Select(e => e.UserId), JsonRequestBehavior.AllowGet);
             }
 
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
@@ -739,7 +758,7 @@ namespace Server.Controllers
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You can't get banned users from this chat");
                 }
 
-                return Json(await db.BannedByChat.Where(e => e.BannerId == chatId).Skip(start).Take(count.Value).Select(e => e.BannedId).ToArrayAsync(), JsonRequestBehavior.AllowGet);
+                return Json(await db.BannedByChat.Where(e => e.BannerId == chatId).OrderBy(e => e.Id).Skip(start).Take(count.Value).Select(e => e.BannedId).ToArrayAsync(), JsonRequestBehavior.AllowGet);
             }
 
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");

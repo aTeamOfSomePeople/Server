@@ -15,6 +15,42 @@ namespace Server.Controllers
     {
         private ServerContext db = new ServerContext();
 
+        public async Task<ActionResult> GetUserInfo(long? userId, string fields)
+        {
+            if (!userId.HasValue)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
+            }
+            var separatedFields = new List<string>();
+            if (!String.IsNullOrWhiteSpace(fields))
+            {
+                separatedFields.AddRange(fields.ToLower().Split(new char[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries));
+            }
+
+            if (ModelState.IsValid)
+            {
+                var user = await db.Users.FirstOrDefaultAsync(e => e.Id == userId);
+                var response = new Dictionary<string, string>();
+                response.Add("id", user.Id.ToString());
+                if (separatedFields.Count == 0 || separatedFields.Contains("name"))
+                {
+                    response.Add("name", user.Name);
+                }
+                if (separatedFields.Count == 0 || separatedFields.Contains("avatar"))
+                {
+                    response.Add("avatar", (await db.UploadedFiles.FirstOrDefaultAsync(e => e.Id == user.Avatar)).Link);
+                }
+                if (separatedFields.Count == 0 || separatedFields.Contains("description"))
+                {
+                    response.Add("description", user.Description);
+                }
+
+                return Json(response, JsonRequestBehavior.AllowGet);
+            }
+
+            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
+        }
+
         [HttpPost, RequireHttps]
         public async Task<ActionResult> ChangeName(string accessToken, string newName)
         {
@@ -212,7 +248,7 @@ namespace Server.Controllers
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Token is invalid");
                 }
 
-                return Json(await db.BannedByUser.Where(e => e.BannerId == tokens.Id).Skip(start).Take(count.Value).Select(e => e.BannedId).ToArrayAsync(), JsonRequestBehavior.AllowGet);
+                return Json(await db.BannedByUser.Where(e => e.BannerId == tokens.Id).OrderBy(e => e.Id).Skip(start).Take(count.Value).Select(e => e.BannedId).ToArrayAsync(), JsonRequestBehavior.AllowGet);
             }
 
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
@@ -250,7 +286,7 @@ namespace Server.Controllers
 
             if (ModelState.IsValid)
             {
-                return Json(await db.Users.Where(e => e.Name.StartsWith(name)).Skip(start).Take(count.Value).Select(e => e.Id).ToArrayAsync(), JsonRequestBehavior.AllowGet);
+                return Json(await db.Users.Where(e => e.Name.StartsWith(name)).OrderBy(e => e.Id).Skip(start).Take(count.Value).Select(e => e.Id).ToArrayAsync(), JsonRequestBehavior.AllowGet);
             }
 
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
