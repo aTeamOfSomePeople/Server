@@ -10,11 +10,11 @@ namespace Server.Utils
 {
     public class ValidateFile
     {
-        public static string GetImageExtention(Stream imageStream)
+        public static string GetImageExtention(byte[] fileBytes)
         {
             try
             {
-                var format = Image.FromStream(imageStream).RawFormat;
+                var format = Image.FromStream(new MemoryStream(fileBytes)).RawFormat;
                 var extensions = ImageCodecInfo.GetImageEncoders().FirstOrDefault(encoder => encoder.FormatID == format.Guid).FilenameExtension;
 
                 return extensions.Split(new[] { ';', '.', '*' }, StringSplitOptions.RemoveEmptyEntries)

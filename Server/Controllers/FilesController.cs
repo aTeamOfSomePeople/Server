@@ -16,8 +16,8 @@ namespace Server.Controllers
         private ServerContext db = new ServerContext();
         private static ZeroCdnClients.CdnFilesClient cdnClient = (new ZeroCdnClients.CdnClientsFactory(Properties.Resources.ZeroCDNUsername, Properties.Resources.ZeroCDNKey)).Files;
 
-        [HttpPost]
-        public async Task<ActionResult> UploadFile(HttpPostedFile file)
+        [HttpPost, RequireHttps]
+        public async Task<ActionResult> UploadFile(HttpPostedFileBase file)
         {
             if (file == null)
             {
@@ -28,7 +28,10 @@ namespace Server.Controllers
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Too big file");
             }
 
-            var fileExtention = Utils.ValidateFile.GetImageExtention(file.InputStream);
+            var fileBytes = new byte[file.ContentLength];
+            file.InputStream.Read(fileBytes, 0, file.ContentLength);
+
+            var fileExtention = Utils.ValidateFile.GetImageExtention(fileBytes);
             if (!Utils.FilesExstensions.PosibleImageExtensions.Contains(fileExtention))
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid file type");
@@ -36,9 +39,13 @@ namespace Server.Controllers
 
             if (ModelState.IsValid)
             {
-                var fileBytes = new byte[file.ContentLength];
-                await file.InputStream.ReadAsync(fileBytes, 0, file.ContentLength);
+
                 var cdnFile = await cdnClient.Add(fileBytes, $"{DateTime.UtcNow.Ticks}.{fileExtention}");
+                if (cdnFile.ID == 0)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
+                }
+
                 var uploadedFile = new UploadedFiles()
                 {
                     Link = $"http://zerocdn.com/{cdnFile.ID}/{cdnFile.Name}",
@@ -52,7 +59,6 @@ namespace Server.Controllers
 
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
-
 
         internal static async Task<ActionResult> RemoveFile(long? id, ServerContext db)
         {
@@ -85,7 +91,7 @@ namespace Server.Controllers
                 return null;
             }
 
-            var fileExtention = Utils.ValidateFile.GetImageExtention(new System.IO.MemoryStream(fileBytes));
+            var fileExtention = Utils.ValidateFile.GetImageExtention(fileBytes);
             if (!Utils.FilesExstensions.PosibleImageExtensions.Contains(fileExtention))
             {
                 return null;

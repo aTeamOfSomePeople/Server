@@ -15,13 +15,85 @@ namespace Server.Controllers
     {
         private ServerContext db = new ServerContext();
 
-        [HttpPost]
+        public async Task<ActionResult> GetChatInfo(string accessToken, long? chatId, string fields)
+        {
+            if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
+            }
+            var separatedFields = new List<string>();
+            if (!String.IsNullOrWhiteSpace(fields))
+            {
+                separatedFields.AddRange(fields.ToLower().Split(new char[]{ ',', ' '}, StringSplitOptions.RemoveEmptyEntries));
+            }
+
+            if (ModelState.IsValid)
+            {
+                var tokens = await TokensController.ValidToken(accessToken, db);
+                if (tokens == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");
+                }
+
+                if (!await db.UsersInChats.AnyAsync(e => e.UserId == tokens.UserId && e.ChatId == chatId))
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You don't have access to this chat");
+                }
+
+                var chat = await db.Chats.FirstOrDefaultAsync(e => e.Id == chatId);
+                var response = new Dictionary<string, string>();
+                if (separatedFields.Count == 0 || separatedFields.Contains("id"))
+                {
+                    response.Add("id", chat.Id.ToString());
+                }
+                if (separatedFields.Count == 0 || separatedFields.Contains("name"))
+                {
+                    if (chat.Type == Enums.ChatType.Dialog)
+                    {
+                        var names = chat.Name.Split('|');
+                        response.Add("name", chat.Creator == tokens.UserId ? names[1] : names[0]);
+                    }
+                    else
+                    {
+                        response.Add("name", chat.Name.ToString());
+                    }
+                }
+                if (separatedFields.Count == 0 || separatedFields.Contains("avatar"))
+                {
+                    if (chat.Type == Enums.ChatType.Dialog)
+                    {
+                        var userInChat = await db.UsersInChats.FirstOrDefaultAsync(e => e.ChatId == chatId && e.UserId != tokens.UserId);
+                        var user = await db.Users.FirstOrDefaultAsync(e => e.Id == userInChat.UserId);
+                        response.Add("avatar", (await db.UploadedFiles.FirstOrDefaultAsync(e => e.Id == user.Avatar)).Link);
+                    }
+                    else
+                    {
+                        response.Add("avatar", (await db.UploadedFiles.FirstOrDefaultAsync(e => e.Id == chat.Avatar)).Link);
+                    }
+                }
+                if ((separatedFields.Count == 0 || separatedFields.Contains("creator")) && chat.Type != Enums.ChatType.Dialog)
+                {
+                    response.Add("creator", chat.Creator.ToString());
+                }
+                if (separatedFields.Count == 0 || separatedFields.Contains("type"))
+                {
+                    response.Add("type", chat.Type.ToString());
+                }
+
+                return Json(response, JsonRequestBehavior.AllowGet);
+            }
+
+            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
+        }
+
+        [HttpPost, RequireHttps]
         public async Task<ActionResult> CreateDialog(string accessToken, long? secondUserId)
         {
             if (String.IsNullOrWhiteSpace(accessToken) || !secondUserId.HasValue)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
             }
+
             if (ModelState.IsValid)
             {
                 var tokens = await TokensController.ValidToken(accessToken, db);
@@ -49,7 +121,7 @@ namespace Server.Controllers
 
                 var chat = new Chats()
                 {
-                    Name = $"{(await db.Users.FirstOrDefaultAsync(e => e.AccountId == tokens.UserId)).Name} | {(await db.Users.FirstOrDefaultAsync(e => e.AccountId == secondUserId)).Name}",
+                    Name = $"{(await db.Users.FirstOrDefaultAsync(e => e.Id == tokens.UserId)).Name}|{(await db.Users.FirstOrDefaultAsync(e => e.Id == secondUserId)).Name}",
                     Type = Enums.ChatType.Dialog,
                     Creator = tokens.UserId
                 };
@@ -65,7 +137,7 @@ namespace Server.Controllers
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
 
-        [HttpPost]
+        [HttpPost, RequireHttps]
         public async Task<ActionResult> CreateGroup(string accessToken, string name, long[] userIds)
         {
             if (String.IsNullOrWhiteSpace(accessToken) || String.IsNullOrWhiteSpace(name) || userIds == null)
@@ -116,7 +188,7 @@ namespace Server.Controllers
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
 
-        [HttpPost]
+        [HttpPost, RequireHttps]
         public async Task<ActionResult> CreatePublic(string accessToken, string name, long[] userIds)
         {
             if (String.IsNullOrWhiteSpace(accessToken) || String.IsNullOrWhiteSpace(name))
@@ -172,7 +244,7 @@ namespace Server.Controllers
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
 
-        [HttpPost]
+        [HttpPost, RequireHttps]
         public async Task<ActionResult> ChangeName(string accessToken, long? chatId, string newName)
         {
             if (String.IsNullOrWhiteSpace(accessToken) || String.IsNullOrWhiteSpace(newName) || !chatId.HasValue)
@@ -231,7 +303,7 @@ namespace Server.Controllers
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
 
-        [HttpPost]
+        [HttpPost, RequireHttps]
         public async Task<ActionResult> ChangeAvatar(string accessToken, long? chatId, long? fileId)
         {
             if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue || !fileId.HasValue)
@@ -333,7 +405,7 @@ namespace Server.Controllers
         //    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         //}
 
-        [HttpPost]
+        [HttpPost, RequireHttps]
         public async Task<ActionResult> JoinThePublic(string accessToken, long? chatId)
         {
             if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue)
@@ -371,7 +443,7 @@ namespace Server.Controllers
                 var userInChat = new UsersInChats()
                 {
                     ChatId = chat.Id,
-                    UserId = tokens.Id,
+                    UserId = tokens.UserId,
                     UnreadedMessages = 0,
                     CanWrite = false
                 };
@@ -433,7 +505,7 @@ namespace Server.Controllers
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
 
-        [HttpPost]
+        [HttpPost, RequireHttps]
         public async Task<ActionResult> RemoveUserFromGroup(string accessToken, long? chatId, long? userId)
         {
             if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue || !userId.HasValue)
@@ -481,7 +553,7 @@ namespace Server.Controllers
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
 
-        [HttpPost]
+        [HttpPost, RequireHttps]
         public async Task<ActionResult> Leave(string accessToken, long? chatId)
         {
             if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue)
@@ -522,7 +594,7 @@ namespace Server.Controllers
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
 
-        [HttpPost]
+        [HttpPost, RequireHttps]
         public async Task<ActionResult> BanUser(string accessToken, long? chatId, long? userId)
         {
             if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue || !userId.HasValue)
@@ -575,7 +647,7 @@ namespace Server.Controllers
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
 
-        [HttpPost]
+        [HttpPost, RequireHttps]
         public async Task<ActionResult> UnBanUser(string accessToken, long? chatId, long? userId)
         {
             if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue || !userId.HasValue)
@@ -673,7 +745,7 @@ namespace Server.Controllers
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
 
-        [HttpPost]
+        [HttpPost, RequireHttps]
         public async Task<ActionResult> InviteToGroup(string accessToken, long? chatId, long? userId)
         {
             if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue || !userId.HasValue)
@@ -731,9 +803,9 @@ namespace Server.Controllers
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
 
-        public async Task<ActionResult> FindPublicByName(string accessToken, string name, int? count, int start = 0)
+        public async Task<ActionResult> FindPublicByName(string name, int? count, int start = 0)
         {
-            if (String.IsNullOrWhiteSpace(accessToken) || String.IsNullOrWhiteSpace(name))
+            if (String.IsNullOrWhiteSpace(name))
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
             }
@@ -758,13 +830,7 @@ namespace Server.Controllers
 
             if (ModelState.IsValid)
             {
-                var tokens = await db.Tokens.FirstOrDefaultAsync(e => e.AccessToken == accessToken);
-                if (tokens == null)
-                {
-                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Token is invalid");
-                }
-
-                return Json(await db.Chats.Where(e => e.Type == Enums.ChatType.Public && e.Name.StartsWith(name)).Skip(start).Take(count.Value).Select(e => e.Id).ToArrayAsync(), JsonRequestBehavior.AllowGet);
+                return Json(await db.Chats.Where(e => e.Type == Enums.ChatType.Public && e.Name.StartsWith(name)).OrderBy(f => f.Id).Skip(start).Take(count.Value).Select(e => e.Id).ToArrayAsync(), JsonRequestBehavior.AllowGet);
             }
 
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");

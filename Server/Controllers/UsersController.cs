@@ -15,7 +15,7 @@ namespace Server.Controllers
     {
         private ServerContext db = new ServerContext();
 
-        [HttpPost]
+        [HttpPost, RequireHttps]
         public async Task<ActionResult> ChangeName(string accessToken, string newName)
         {
             if (String.IsNullOrWhiteSpace(accessToken) || String.IsNullOrWhiteSpace(newName))
@@ -45,7 +45,7 @@ namespace Server.Controllers
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
 
-        [HttpPost]
+        [HttpPost, RequireHttps]
         public async Task<ActionResult> ChangeDescription(string accessToken, string newDescription = "")
         {
             if (String.IsNullOrWhiteSpace(accessToken))
@@ -72,7 +72,7 @@ namespace Server.Controllers
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
 
-        [HttpPost]
+        [HttpPost, RequireHttps]
         public async Task<ActionResult> ChangeAvatar(string accessToken, long? fileId)
         {
             if (String.IsNullOrWhiteSpace(accessToken) || !fileId.HasValue)
@@ -110,7 +110,7 @@ namespace Server.Controllers
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
 
-        [HttpPost]
+        [HttpPost, RequireHttps]
         public async Task<ActionResult> BanUser(string accessToken, long? userId)
         {
             if (String.IsNullOrWhiteSpace(accessToken) || !userId.HasValue)
@@ -147,7 +147,7 @@ namespace Server.Controllers
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
 
-        [HttpPost]
+        [HttpPost, RequireHttps]
         public async Task<ActionResult> UnBanUser(string accessToken, long? userId)
         {
             if (String.IsNullOrWhiteSpace(accessToken) || !userId.HasValue)

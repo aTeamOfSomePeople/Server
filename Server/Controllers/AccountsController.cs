@@ -16,7 +16,7 @@ namespace Server.Controllers
     {
         private ServerContext db = new ServerContext();
 
-        [HttpPost]
+        [HttpPost, RequireHttps]
         public async Task<ActionResult> Auth(string login, string password)
         {
             if (String.IsNullOrWhiteSpace(login) || String.IsNullOrWhiteSpace(password))
@@ -45,7 +45,7 @@ namespace Server.Controllers
             return HttpNotFound();
         }
 
-        [HttpPost]
+        [HttpPost, RequireHttps]
         public async Task<ActionResult> OAuth(string accessToken, string service)
         {
             if (String.IsNullOrWhiteSpace(accessToken) || String.IsNullOrWhiteSpace(service))
@@ -118,7 +118,7 @@ namespace Server.Controllers
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
         
-        [HttpPost]
+        [HttpPost, RequireHttps]
         public async Task<ActionResult> Register(string login, string password, string name)
         {
             if (String.IsNullOrWhiteSpace(login) || String.IsNullOrWhiteSpace(password) || String.IsNullOrWhiteSpace(name))
@@ -157,7 +157,7 @@ namespace Server.Controllers
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
         
-        [HttpPost]
+        [HttpPost, RequireHttps]
         public async Task<ActionResult> ChangePassword(string accessToken, string oldPassword, string newPassword)
         {
             if (String.IsNullOrWhiteSpace(accessToken) || String.IsNullOrWhiteSpace(oldPassword) || String.IsNullOrWhiteSpace(newPassword))
@@ -200,7 +200,7 @@ namespace Server.Controllers
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
 
-        [HttpPost]
+        [HttpPost, RequireHttps]
         public async Task<ActionResult> Delete(string accessToken)
         {
             if (ModelState.IsValid)

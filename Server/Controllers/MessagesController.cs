@@ -15,7 +15,7 @@ namespace Server.Controllers
     {
         private ServerContext db = new ServerContext();
 
-        [HttpPost]
+        [HttpPost, RequireHttps]
         public async Task<ActionResult> SendMessage(string accessToken, long? chatId, string text, string fileIds)
         {
             if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue || !(!String.IsNullOrWhiteSpace(text) || !String.IsNullOrWhiteSpace(fileIds)))
@@ -89,7 +89,7 @@ namespace Server.Controllers
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
 
-        [HttpPost]
+        [HttpPost, RequireHttps]
         public async Task<ActionResult> GetMessages(string accessToken, long? chatId, Enums.MessagesDirection? direction, DateTime? date, int? count)
         {
             if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue || !direction.HasValue)
@@ -147,7 +147,7 @@ namespace Server.Controllers
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
 
-        [HttpPost]
+        [HttpPost, RequireHttps]
         public async Task<ActionResult> EditMessage(string accessToken, long? messageId, string newText)
         {
             if (String.IsNullOrWhiteSpace(accessToken) || !messageId.HasValue || String.IsNullOrWhiteSpace(newText))
@@ -186,7 +186,7 @@ namespace Server.Controllers
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
 
-        [HttpPost]
+        [HttpPost, RequireHttps]
         public async Task<ActionResult> DeleteMessage(string accessToken, long? messageId, bool fromAll = true)
         {
             if (String.IsNullOrWhiteSpace(accessToken) || !messageId.HasValue)
