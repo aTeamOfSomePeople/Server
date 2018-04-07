@@ -85,6 +85,19 @@
         <h2>Users</h2>
         <ul>
             <li>
+                <h3>GetUserInfo</h3>
+                HTTP GET<br>
+                users/getuserinfo<br>
+                <h4>Параметры</h4>
+                <ul>
+                    <li>userId</li>
+                    <li>fields</li>
+                </ul>
+                <h4>Возвращаемое значение</h4>
+                {<br>
+                }
+            </li>
+            <li>
                 <h3>ChangeName</h3>
                 HTTP POST<br>
                 users/changename<br>
@@ -173,6 +186,33 @@
     <li>
         <h2>Chats</h2>
         <ul>
+            <li>
+                <h3>SetMessagesReaded</h3>
+                HTTP POST<br>
+                chats/setmessagesreaded<br>
+                <h4>Параметры</h4>
+                <ul>
+                    <li>accessToken</li>
+                    <li>chatId</li>
+                </ul>
+                <h4>Возвращаемое значение</h4>
+                {<br>
+                }
+            </li>
+            <li>
+                <h3>GetChatInfo</h3>
+                HTTP GET<br>
+                chats/getchatinfo<br>
+                <h4>Параметры</h4>
+                <ul>
+                    <li>accessToken</li>
+                    <li>chatId</li>
+                    <li>fields</li>
+                </ul>
+                <h4>Возвращаемое значение</h4>
+                {<br>
+                }
+            </li>
             <li>
                 <h3>CreateDialog</h3>
                 HTTP POST<br>
@@ -327,7 +367,6 @@
                 accounts/auth/<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accessToken</li>
                     <li>chatId</li>
                     <li>count</li>
                     <li>start</li>
