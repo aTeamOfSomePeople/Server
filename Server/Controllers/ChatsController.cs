@@ -15,6 +15,36 @@ namespace Server.Controllers
     {
         private ServerContext db = new ServerContext();
 
+        public async Task<ActionResult> SetMessagesReaded(string accessToken, long? chatId)
+        {
+            if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
+            }
+
+            if (ModelState.IsValid)
+            {
+                var tokens = await TokensController.ValidToken(accessToken, db);
+                if (tokens == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");
+                }
+
+                var userInChat = await db.UsersInChats.FirstOrDefaultAsync(e => e.UserId == tokens.UserId && e.ChatId == chatId);
+                if (userInChat == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You don't have access to this chat");
+                }
+
+                await db.Messages.Where(e => !e.IsReaded).ForEachAsync(e => e.IsReaded = true);
+                userInChat.UnreadedMessages = 0;
+                db.Entry(userInChat).State = EntityState.Modified;
+                await db.SaveChangesAsync();
+            }
+
+            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
+        }
+        
         public async Task<ActionResult> GetChatInfo(string accessToken, long? chatId, string fields)
         {
             if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue)
@@ -76,7 +106,14 @@ namespace Server.Controllers
                 {
                     response.Add("type", chat.Type.ToString());
                 }
-
+                if (separatedFields.Count == 0 || separatedFields.Contains("unreadedmessagescount"))
+                {
+                    response.Add("unreadedMessagesCount", (await db.UsersInChats.FirstOrDefaultAsync(e => e.ChatId == chatId && e.UserId == tokens.UserId)).UnreadedMessages.ToString());
+                }
+                if ((separatedFields.Count == 0 || separatedFields.Contains("memberscount")) && chat.Type != Enums.ChatType.Dialog)
+                {
+                    response.Add("membersCount", (await db.UsersInChats.Where(e => e.ChatId == chatId).CountAsync()).ToString());
+                }
                 return Json(response, JsonRequestBehavior.AllowGet);
             }
 
