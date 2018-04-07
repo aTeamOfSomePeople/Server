@@ -22,8 +22,8 @@
                 accounts/auth<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>login</li>
-                    <li>password</li>
+                    <li>login - тип: string; максимальная длина: 30 символов; минимальная длина: 5 символов; запрещённые символы: ;</li>
+                    <li>password - тип: string; максимальная длина: 30 символов; минимальная длина: 4 символа; запрещённые символы: ;</li>
                 </ul>
                 <h4>Возвращаемое значение</h4>
                 {<br>
@@ -38,8 +38,8 @@
                 accounts/oauth<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accesstoken</li>
-                    <li>service - Название сервиса, из которого получен accesstoken (Доступны "vk", "google", "instagram")</li>
+                    <li>accesstoken - тип: string;</li>
+                    <li>service - тип: string; доступные значения: vk, google, instagram;</li>
                 </ul>
                 <h4>Возвращаемое значение</h4>
                 {<br>
@@ -54,9 +54,9 @@
                 accounts/register<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>login</li>
-                    <li>password</li>
-                    <li>name</li>
+                    <li>login - тип: string; максимальная длина: 30 символов; минимальная длина: 5 символов; запрещённые символы: ;</li>
+                    <li>password - тип: string; максимальная длина: 30 символов; минимальная длина: 4 символа; запрещённые символы: ;</li>
+                    <li>name - тип: string; максимальная длина: 30 символов; минимальная длина: 2 символа; запрещённые символы: ;</li>
                 </ul>
             </li>
             <li>
@@ -65,7 +65,7 @@
                 accounts/delete<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accesstoken</li>
+                    <li>accesstoken - тип: string;</li>
                 </ul>
             </li>
             <li>
@@ -74,9 +74,9 @@
                 accounts/changepassword<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accesstoken</li>
-                    <li>oldpassword</li>
-                    <li>newpassword</li>
+                    <li>accesstoken - тип: string;</li>
+                    <li>oldpassword - тип: string; максимальная длина: 30 символов; минимальная длина: 4 символа; запрещённые символы: ;</li>
+                    <li>newpassword - тип: string; максимальная длина: 30 символов; минимальная длина: 4 символа; запрещённые символы: ;</li>
                 </ul>
             </li>
         </ul>
@@ -90,8 +90,8 @@
                 users/getuserinfo<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>userId</li>
-                    <li>fields</li>
+                    <li>userId - тип: long</li>
+                    <li>fields - тип: string; доступные значения(можно использовать несколько через запятую): name, avatar, description;</li>
                 </ul>
                 <h4>Возвращаемое значение</h4>
                 {<br>
@@ -103,8 +103,8 @@
                 users/changename<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accesstoken</li>
-                    <li>newname</li>
+                    <li>accesstoken - тип: string;</li>
+                    <li>newname - тип: string; максимальная длина: 30 символов; минимальная длина: 2 символа; запрещённые символы: ;</li>
                 </ul>
             </li>
             <li>
@@ -113,8 +113,8 @@
                 users/changedescription<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accesstoken</li>
-                    <li>newdescription</li>
+                    <li>accesstoken - тип: string;</li>
+                    <li>newdescription - тип: string;</li>
                 </ul>
             </li>
             <li>
@@ -123,8 +123,8 @@
                 users/changeavatar<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accesstoken</li>
-                    <li>fileid</li>
+                    <li>accesstoken - тип: string;</li>
+                    <li>fileid - тип: long; значение полученное при использовании метода Files.UploadFile</li>
                 </ul>
             </li>
             <li>
@@ -133,8 +133,8 @@
                 users/banuser<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accesstoken</li>
-                    <li>userid</li>
+                    <li>accesstoken - тип: string;</li>
+                    <li>userid - тип: long;</li>
                 </ul>
             </li>
             <li>
@@ -143,8 +143,8 @@
                 users/unbanuser<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accesstoken</li>
-                    <li>userid</li>
+                    <li>accesstoken - тип: string;</li>
+                    <li>userid - тип: long;</li>
                 </ul>
             </li>
             <li>
@@ -153,15 +153,12 @@
                 users/getbannedusers<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accesstoken</li>
-                    <li>count</li>
-                    <li>start</li>
+                    <li>accesstoken - тип: string;</li>
+                    <li>count - тип: int;</li>
+                    <li>start - тип: int;</li>
                 </ul>
                 <h4>Возвращаемое значение</h4>
                 {<br>
-                "accessToken":"f15d0a1db83d4e60a1ba4bae45968e90",<br>
-                "refreshToken":"1397ff052f004f6f8169246f3fc3deb5",<br>
-                "userId":2<br>
                 }
             </li>
             <li>
@@ -170,15 +167,12 @@
                 users/findusersbyname<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>name</li>
-                    <li>count</li>
-                    <li>start</li>
+                    <li>name - тип: string;</li>
+                    <li>count - тип: int;</li>
+                    <li>start - тип: int;</li>
                 </ul>
                 <h4>Возвращаемое значение</h4>
                 {<br>
-                "accessToken":"f15d0a1db83d4e60a1ba4bae45968e90",<br>
-                "refreshToken":"1397ff052f004f6f8169246f3fc3deb5",<br>
-                "userId":2<br>
                 }
             </li>
         </ul>
@@ -192,8 +186,8 @@
                 chats/setmessagesreaded<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accessToken</li>
-                    <li>chatId</li>
+                    <li>accessToken - тип: string;</li>
+                    <li>chatId - тип: long;</li>
                 </ul>
                 <h4>Возвращаемое значение</h4>
                 {<br>
@@ -205,9 +199,9 @@
                 chats/getchatinfo<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accessToken</li>
-                    <li>chatId</li>
-                    <li>fields</li>
+                    <li>accessToken - тип: string;</li>
+                    <li>chatId - тип: long;</li>
+                    <li>fields - тип: string; доступные значения(можно использовать несколько через запятую): name, avatar, creator, type, unreadedmessagescount, memberscount;</li>
                 </ul>
                 <h4>Возвращаемое значение</h4>
                 {<br>
@@ -219,8 +213,8 @@
                 chats/createdialog<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accessToken</li>
-                    <li>secondUserId</li>
+                    <li>accessToken - тип: string;/li>
+                    <li>secondUserId - тип: long;</li>
                 </ul>
             </li>
             <li>
@@ -229,9 +223,9 @@
                 chats/creategroup<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accessToken</li>
-                    <li>name</li>
-                    <li>userIds</li>
+                    <li>accessToken - тип: string;</li>
+                    <li>name - тип: string;</li>
+                    <li>userIds - тип: string; ID перечисленные через ',' минимум 2 дополнительных пользователя</li>
                 </ul>
             </li>
             <li>
@@ -240,9 +234,9 @@
                 chats/createpublic<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accessToken</li>
-                    <li>name</li>
-                    <li>userIds</li>
+                    <li>accessToken - тип: string;</li>
+                    <li>name - тип: string;</li>
+                    <li>userIds - тип: string; ID перечисленные через ','</li>
                 </ul>
             </li>
             <li>
@@ -251,9 +245,9 @@
                 chats/changename<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accessToken</li>
-                    <li>newName</li>
-                    <li>chatId</li>
+                    <li>accessToken - тип: string;</li>
+                    <li>newName - тип: string;</li>
+                    <li>chatId - тип: long;</li>
                 </ul>
             </li>
             <li>
@@ -262,9 +256,9 @@
                 chats/changeavatar<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accessToken</li>
-                    <li>chatId</li>
-                    <li>fileId</li>
+                    <li>accessToken - тип: string;</li>
+                    <li>chatId - тип: long;</li>
+                    <li>fileId - тип: long; значение полученное при использовании метода Files.UploadFile</li>
                 </ul>
             </li>
             <li>
@@ -273,8 +267,8 @@
                 chats/jointhepublic<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accessToken</li>
-                    <li>chatId</li>
+                    <li>accessToken - тип: string;</li>
+                    <li>chatId - тип: long;</li>
                 </ul>
             </li>
             <li>
@@ -283,10 +277,10 @@
                 chats/getusers<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accessToken</li>
-                    <li>chatId</li>
-                    <li>count</li>
-                    <li>start </li>
+                    <li>accessToken - тип: string;</li>
+                    <li>chatId - тип: long;</li>
+                    <li>count - тип: int;</li>
+                    <li>start - тип: int;</li>
                 </ul>
                 <h4>Возвращаемое значение</h4>
                 {<br>
@@ -298,9 +292,9 @@
                 chats/removeuserfromgroup<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accessToken</li>
-                    <li>chatId</li>
-                    <li>userId</li>
+                    <li>accessToken - тип: string;</li>
+                    <li>chatId - тип: long;</li>
+                    <li>userId - тип: long;</li>
                 </ul>
             </li>
             <li>
@@ -309,8 +303,8 @@
                 chats/leave<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accessToken</li>
-                    <li>chatId</li>
+                    <li>accessToken - тип: string;</li>
+                    <li>chatId - тип: long;</li>
                 </ul>
             </li>
             <li>
@@ -319,9 +313,9 @@
                 chats/banuser<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accessToken</li>
-                    <li>chatId</li>
-                    <li>userId</li>
+                    <li>accessToken - тип: string;</li>
+                    <li>chatId - тип: long;</li>
+                    <li>userId - тип: long;</li>
                 </ul>
             </li>
             <li>
@@ -330,9 +324,9 @@
                 chats/unbanuser<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accessToken</li>
-                    <li>chatId</li>
-                    <li>userId</li>
+                    <li>accessToken - тип: string;</li>
+                    <li>chatId - тип: long;</li>
+                    <li>userId - тип: long;</li>
                 </ul>
             </li>
             <li>
@@ -341,10 +335,10 @@
                 chats/getbannedusers<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accessToken</li>
-                    <li>chatId</li>
-                    <li>count</li>
-                    <li>start</li>
+                    <li>accessToken - тип: string;</li>
+                    <li>chatId - тип: long;</li>
+                    <li>count - тип: int;</li>
+                    <li>start - тип: int;</li>
                 </ul>
                 <h4>Возвращаемое значение</h4>
                 {<br>
@@ -356,9 +350,9 @@
                 chats/invitetogroup<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accessToken</li>
-                    <li>chatId</li>
-                    <li>userId</li>
+                    <li>accessToken - тип: string;</li>
+                    <li>chatId - тип: long;</li>
+                    <li>userId - тип: long;</li>
                 </ul>
             </li>
             <li>
@@ -367,9 +361,9 @@
                 accounts/auth/<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>chatId</li>
-                    <li>count</li>
-                    <li>start</li>
+                    <li>name - тип: string;</li>
+                    <li>count - тип: int;</li>
+                    <li>start - тип: int;</li>
                 </ul>
                 <h4>Возвращаемое значение</h4>
                 {<br>
@@ -386,10 +380,10 @@
                 messages/sendmessage<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accessToken</li>
-                    <li>chatId</li>
-                    <li>text</li>
-                    <li>fileIds</li>
+                    <li>accessToken - тип: string;</li>
+                    <li>chatId - тип: long;</li>
+                    <li>text - тип: string;</li>
+                    <li>fileIds - тип: string; значение полученное при использовании метода Files.UploadFile</li>
                 </ul>
             </li>
             <li>
@@ -398,10 +392,10 @@
                 messages/getmessages<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accessToken</li>
-                    <li>chatId</li>
-                    <li>count</li>
-                    <li>start</li>
+                    <li>accessToken - тип: string;</li>
+                    <li>chatId - тип: long;</li>
+                    <li>count - тип: int;</li>
+                    <li>start - тип: int;</li>
                 </ul>
                 <h4>Возвращаемое значение</h4>
                 {<br>
@@ -413,9 +407,9 @@
                 messages/editnessage<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accessToken</li>
-                    <li>messageId</li>
-                    <li>newText</li>
+                    <li>accessToken - тип: string;</li>
+                    <li>messageId - тип: long;</li>
+                    <li>newText - тип: string;</li>
                 </ul>
             </li>
             <li>
@@ -424,9 +418,9 @@
                 messages/deletemessage<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accessToken</li>
-                    <li>messageId</li>
-                    <li>fromAll</li>
+                    <li>accessToken - тип: string;</li>
+                    <li>messageId - тип: long;</li>
+                    <li>fromAll - тип: bool; удаление сообщения у всех пользователей или только у себя</li>
                 </ul>
             </li>
         </ul>
@@ -440,7 +434,7 @@
                 files/uploadfile<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>file</li>
+                    <li>file - тип: stream; загрузка файла, доступные форматы: .jpg, .bmp</li>
                 </ul>
             </li>
         </ul>
@@ -454,7 +448,7 @@
                 tokens/refreshtokens<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>refreshtoken</li>
+                    <li>refreshtoken - тип: string;</li>
                 </ul>
                 <h4>Возвращаемое значение</h4>
                 {<br>
@@ -469,13 +463,10 @@
                 tokens/checktoken<br>
                 <h4>Параметры</h4>
                 <ul>
-                    <li>accesstoken</li>
+                    <li>accesstoken - тип: string;</li>
                 </ul>
                 <h4>Возвращаемое значение</h4>
                 {<br>
-                "accessToken":"f15d0a1db83d4e60a1ba4bae45968e90",<br>
-                "refreshToken":"1397ff052f004f6f8169246f3fc3deb5",<br>
-                "userId":2<br>
                 }
             </li>
         </ul>
