@@ -15,6 +15,7 @@ namespace Server.Controllers
     {
         private ServerContext db = new ServerContext();
 
+        [HttpPost, RequireHttps]
         public async Task<ActionResult> SetMessagesReaded(string accessToken, long? chatId)
         {
             if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue)
