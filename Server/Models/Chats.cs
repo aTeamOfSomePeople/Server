@@ -24,5 +24,7 @@ namespace Server.Models
         [ForeignKey("UploadedFiles")]
         public long? Avatar { get; set; }
         public virtual UploadedFiles UploadedFiles { get; set; }
+
+        public long MembersCount { get; set; }
     }
 }

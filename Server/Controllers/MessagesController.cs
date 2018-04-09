@@ -83,9 +83,13 @@ namespace Server.Controllers
                     await db.SaveChangesAsync();
                 }
 
+                var context = Microsoft.AspNet.SignalR.GlobalHost.ConnectionManager.GetHubContext<Hubs.ChatHub>();
+                context.Clients.Group(chatId.ToString()).newMessage(message.Id);
+
                 return new HttpStatusCodeResult(HttpStatusCode.OK);
             }
 
+            
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
         

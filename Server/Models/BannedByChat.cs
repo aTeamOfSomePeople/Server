@@ -11,11 +11,11 @@ namespace Server.Models
     {
         public long Id { get; set; }
 
-        [Required, ForeignKey("Chats"), Index("User", IsUnique = true, Order = 1)]
+        [Required, ForeignKey("Chats"), Index("Ban", IsUnique = true, Order = 1)]
         public long BannerId { get; set; }
         public virtual Chats Chats { get; set; }
 
-        [Required, ForeignKey("Users"), Index("User", IsUnique = true, Order = 2)]
+        [Required, ForeignKey("Users"), Index("Ban", IsUnique = true, Order = 2)]
         public long BannedId { get; set; }
         public virtual Users Users { get; set; }
     }

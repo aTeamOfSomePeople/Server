@@ -254,10 +254,43 @@ namespace Server.Controllers
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
 
-        //public async Task<ActionResult> GetUsers()
-        //{
-        //    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
-        //}
+        public async Task<ActionResult> GetChats(string accessToken, int? count, int start = 0)
+        {
+            if (String.IsNullOrWhiteSpace(accessToken))
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
+            }
+            if (start < 0)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Start must be greater than zero");
+            }
+            if (!count.HasValue)
+            {
+                count = 50;
+            }
+            if (count <= 0)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Count must be greater than zero");
+            }
+
+            if (count > 50)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Count must be lower or equal to 50");
+            }
+
+            if (ModelState.IsValid)
+            {
+                var tokens = await db.Tokens.FirstOrDefaultAsync(e => e.AccessToken == accessToken);
+                if (tokens == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Token is invalid");
+                }
+
+                return Json(db.UsersInChats.Where(e => e.UserId == tokens.UserId).OrderBy(e => e.Id).Skip(start).Take(count.Value).Select(e => e.ChatId), JsonRequestBehavior.AllowGet);
+            }
+
+            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
+        }
 
         public async Task<ActionResult> FindUsersByName(string name, int? count, int start = 0)
         {

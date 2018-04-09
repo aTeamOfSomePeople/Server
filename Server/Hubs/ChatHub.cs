@@ -11,31 +11,56 @@ namespace Server.Hubs
     [HubName("ZeroMessenger")]
     public class ChatHub : Hub
     {
-        static Dictionary<string, int> users = new Dictionary<string, int>();
-        public void connect(int userId, List<Models.Chats> chats)
+        internal static Dictionary<string, long> users = new Dictionary<string, long>();
+        public void connect(string accessToken)
         {
-            foreach (var chat in chats)
+            var user = (Utils.CheckTokenResponse)((System.Web.Mvc.JsonResult)(new Controllers.TokensController().CheckToken(accessToken).Result)).Data;
+            if (user != null)
             {
-                Groups.Add(Context.ConnectionId, chat.Id.ToString());
+                foreach (var chatId in (List<long>)((System.Web.Mvc.JsonResult)(new Controllers.UsersController().GetChats(accessToken, 50, 0).Result)).Data)
+                {
+                    Groups.Add(Context.ConnectionId, chatId.ToString());
+                }
+                try
+                {
+                    users.Add(Context.ConnectionId, user.userId);
+                }
+                catch { }
             }
-            users.Add(Context.ConnectionId, userId);
         }
 
-        public void newMessage(Models.Chats chat, Models.Messages message)
+        internal void newChat(Models.Chats chat, List<long> userIds)
         {
-            Clients.Group(chat.Id.ToString()).newMessage(message);
-        }
-        public void newChat(Models.Chats chat, List<Models.Users> users)
-        {
-            foreach (var user in users)
+            if (chat.Type == Enums.ChatType.Dialog)
             {
-                foreach (var us in ChatHub.users.Where(e => e.Value == user.Id))
+                return;
+            }
+            foreach (var userId in userIds)
+            {
+                foreach (var user in users.Where(e => e.Value == userId))
                 {
-                    Groups.Add(us.Key, chat.Id.ToString()).Wait();
+                    Groups.Add(user.Key, chat.Id.ToString()).Wait();
                 }
             }
-            Clients.Group(chat.Id.ToString()).newChat(chat);
-            
+            Clients.Group(chat.Id.ToString()).newChat(new { id = chat.Id, creator = chat.Creator, name = chat.Name, avatar = chat.Avatar, type = chat.Type});
+        }
+
+        internal void newDialog(Models.Chats chat, long firstUser, long secondUser)
+        {
+            if (chat.Type != Enums.ChatType.Dialog)
+            {
+                return;
+            }
+
+            var names = chat.Name.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var user in users.Where(e => e.Value == firstUser))
+            {
+                Clients.Client(user.Key.ToString()).newChat(new { id = chat.Id, creator = chat.Creator, name = names[0], avatar = chat.Avatar, type = chat.Type });
+            }
+            foreach (var user in users.Where(e => e.Value == secondUser))
+            {
+                Clients.Client(user.Key.ToString()).newChat(new { id = chat.Id, creator = chat.Creator, name = names[1], avatar = chat.Avatar, type = chat.Type });
+            }
         }
 
         public override Task OnDisconnected(bool stopCalled)

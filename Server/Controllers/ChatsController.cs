@@ -72,6 +72,10 @@ namespace Server.Controllers
                 }
 
                 var chat = await db.Chats.FirstOrDefaultAsync(e => e.Id == chatId);
+                if (chat == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.NotFound);
+                }
                 var response = new Dictionary<string, string>();
                 response.Add("id", chat.Id.ToString());
                 if (separatedFields.Count == 0 || separatedFields.Contains("name"))
@@ -113,7 +117,7 @@ namespace Server.Controllers
                 }
                 if ((separatedFields.Count == 0 || separatedFields.Contains("memberscount")) && chat.Type != Enums.ChatType.Dialog)
                 {
-                    response.Add("membersCount", (await db.UsersInChats.Where(e => e.ChatId == chatId).CountAsync()).ToString());
+                    response.Add("membersCount", chat.MembersCount.ToString());
                 }
                 return Json(response, JsonRequestBehavior.AllowGet);
             }
@@ -165,6 +169,9 @@ namespace Server.Controllers
                 db.UsersInChats.Add(new UsersInChats() { ChatId = chat.Id, UserId = tokens.UserId, CanWrite = true, UnreadedMessages = 0 });
                 db.UsersInChats.Add(new UsersInChats() { ChatId = chat.Id, UserId = secondUserId.Value, CanWrite = true, UnreadedMessages = 0 });
                 await db.SaveChangesAsync();
+
+                var toAdd = Hubs.ChatHub.users.Where(e => e.Value == tokens.UserId || e.Value == secondUserId);
+                NewChat(chat.Id, toAdd);
 
                 return new HttpStatusCodeResult(HttpStatusCode.OK);
             }
@@ -227,6 +234,9 @@ namespace Server.Controllers
                     db.UsersInChats.Add(new UsersInChats() { ChatId = chat.Id, UserId = e, CanWrite = true, UnreadedMessages = 0 });
                 }
                 await db.SaveChangesAsync();
+
+                var toAdd = Hubs.ChatHub.users.Where(e => userIdsTable.Contains(e.Value));
+                NewChat(chat.Id, toAdd);
 
                 return new HttpStatusCodeResult(HttpStatusCode.OK);
             }
@@ -294,6 +304,9 @@ namespace Server.Controllers
                     }
                 }
                 await db.SaveChangesAsync();
+
+                var toAdd = Hubs.ChatHub.users.Where(e => userIdsTable.Contains(e.Value));
+                NewChat(chat.Id, toAdd);
 
                 return new HttpStatusCodeResult(HttpStatusCode.OK);
             }
@@ -416,52 +429,7 @@ namespace Server.Controllers
 
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
         }
-
-        //[HttpPost]
-        //public async Task<ActionResult> DeletePublic(string accessToken, long? chatId)
-        //{
-        //    if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue)
-        //    {
-        //        return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
-        //    }
-        //    if (ModelState.IsValid)
-        //    {
-        //        var tokens = await TokensController.ValidToken(accessToken, db);
-        //        if (tokens == null)
-        //        {
-        //            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");
-        //        }
-
-        //        var chat = await db.Chats.FindAsync(chatId);
-        //        if (chat == null)
-        //        {
-        //            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Public is not exists");
-        //        }
-        //        if (chat.Type != Enums.ChatType.Public)
-        //        {
-        //            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "It's not a public");
-        //        }
-
-        //        var userInChat = await db.UsersInChats.FirstOrDefaultAsync(e => e.UserId == tokens.UserId && e.ChatId == chatId);
-        //        if (userInChat == null)
-        //        {
-        //            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You don't have access to this public");
-        //        }
-        //        if (!userInChat.CanWrite)
-        //        {
-        //            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Only admins can delete public");
-        //        }
-
-        //        Chats chats = await db.Chats.FindAsync(chatId);
-        //        db.Chats.Remove(chats);
-        //        await db.SaveChangesAsync();
-
-        //        return new HttpStatusCodeResult(HttpStatusCode.OK);
-        //    }
-
-        //    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
-        //}
-
+        
         [HttpPost, RequireHttps]
         public async Task<ActionResult> JoinThePublic(string accessToken, long? chatId)
         {
@@ -505,6 +473,8 @@ namespace Server.Controllers
                     CanWrite = false
                 };
                 db.UsersInChats.Add(userInChat);
+                chat.MembersCount++;
+                db.Entry(chat).State = EntityState.Modified;
                 await db.SaveChangesAsync();
 
                 return new HttpStatusCodeResult(HttpStatusCode.OK);
@@ -601,6 +571,8 @@ namespace Server.Controllers
                 }
 
                 db.UsersInChats.Remove(userInChat);
+                chat.MembersCount--;
+                db.Entry(chat).State = EntityState.Modified;
                 await db.SaveChangesAsync();
 
                 return new HttpStatusCodeResult(HttpStatusCode.OK);
@@ -641,8 +613,10 @@ namespace Server.Controllers
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You already not in the chat");
                 }
-
+                
                 db.UsersInChats.Remove(userInChat);
+                chat.MembersCount--;
+                db.Entry(chat).State = EntityState.Modified;
                 await db.SaveChangesAsync();
 
                 return new HttpStatusCodeResult(HttpStatusCode.OK);
@@ -852,6 +826,8 @@ namespace Server.Controllers
                     CanWrite = false
                 };
                 db.UsersInChats.Add(userInChat);
+                chat.MembersCount++;
+                db.Entry(chat).State = EntityState.Modified;
                 await db.SaveChangesAsync();
 
                 return new HttpStatusCodeResult(HttpStatusCode.OK);
@@ -887,7 +863,7 @@ namespace Server.Controllers
 
             if (ModelState.IsValid)
             {
-                return Json(await db.Chats.Where(e => e.Type == Enums.ChatType.Public && e.Name.StartsWith(name)).OrderBy(f => f.Id).Skip(start).Take(count.Value).Select(e => e.Id).ToArrayAsync(), JsonRequestBehavior.AllowGet);
+                return Json(await db.Chats.Where(e => e.Type == Enums.ChatType.Public && e.Name.StartsWith(name)).OrderBy(f => f.Id).Skip(start).Take(count.Value).Select(e => new { id = e.Id, name = e.Name, membersCount = e.MembersCount, avatar = e.Avatar, type = e.Type, creator = e.Creator}).ToArrayAsync(), JsonRequestBehavior.AllowGet);
             }
 
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
@@ -900,6 +876,16 @@ namespace Server.Controllers
                 db.Dispose();
             }
             base.Dispose(disposing);
+        }
+
+        private static async void NewChat(long chatId, IEnumerable<KeyValuePair<string, long>> toAdd)
+        {
+            var context = Microsoft.AspNet.SignalR.GlobalHost.ConnectionManager.GetHubContext<Hubs.ChatHub>();
+            foreach (var e in toAdd)
+            {
+                await context.Groups.Add(e.Key, chatId.ToString());
+            }
+            context.Clients.Group(chatId.ToString()).newChat(chatId);
         }
     }
 }
