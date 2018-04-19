@@ -38,7 +38,10 @@ namespace Server.Controllers
                 }
                 if (separatedFields.Count == 0 || separatedFields.Contains("avatar"))
                 {
-                    response.Add("avatar", (await db.UploadedFiles.FirstOrDefaultAsync(e => e.Id == user.Avatar)).Link);
+                    if (user.Avatar != null)
+                    {
+                        response.Add("avatar", (await db.UploadedFiles.FirstOrDefaultAsync(e => e.Id == user.Avatar)).Link);
+                    }
                 }
                 if (separatedFields.Count == 0 || separatedFields.Contains("description"))
                 {

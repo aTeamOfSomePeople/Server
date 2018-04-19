@@ -174,7 +174,7 @@ namespace Server.Controllers
                 }
 
                 var user = await db.Users.FindAsync(tokens.UserId);
-                if (user.ServiceId == (await db.Services.FirstOrDefaultAsync(e => e.Name == "zeromessenger")).Id)
+                if (user.ServiceId != (await db.Services.FirstOrDefaultAsync(e => e.Name == "zeromessenger")).Id)
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Allowed only for internal users");
                 }

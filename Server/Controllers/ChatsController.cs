@@ -96,9 +96,12 @@ namespace Server.Controllers
                     {
                         var userInChat = await db.UsersInChats.FirstOrDefaultAsync(e => e.ChatId == chatId && e.UserId != tokens.UserId);
                         var user = await db.Users.FirstOrDefaultAsync(e => e.Id == userInChat.UserId);
-                        response.Add("avatar", (await db.UploadedFiles.FirstOrDefaultAsync(e => e.Id == user.Avatar)).Link);
+                        if (user.Avatar != null)
+                        {
+                            response.Add("avatar", (await db.UploadedFiles.FirstOrDefaultAsync(e => e.Id == user.Avatar)).Link);
+                        }
                     }
-                    else
+                    else if (chat.Avatar != null)
                     {
                         response.Add("avatar", (await db.UploadedFiles.FirstOrDefaultAsync(e => e.Id == chat.Avatar)).Link);
                     }
@@ -162,7 +165,8 @@ namespace Server.Controllers
                 {
                     Name = $"{(await db.Users.FirstOrDefaultAsync(e => e.Id == tokens.UserId)).Name}|{(await db.Users.FirstOrDefaultAsync(e => e.Id == secondUserId)).Name}",
                     Type = Enums.ChatType.Dialog,
-                    Creator = tokens.UserId
+                    Creator = tokens.UserId,
+                    MembersCount = 2
                 };
                 db.Chats.Add(chat);
                 await db.SaveChangesAsync();
@@ -224,7 +228,8 @@ namespace Server.Controllers
                 {
                     Name = name,
                     Type = Enums.ChatType.Group,
-                    Creator = tokens.UserId
+                    Creator = tokens.UserId,
+                    MembersCount = userIdsTable.Count
                 };
                 db.Chats.Add(chat);
                 await db.SaveChangesAsync();
@@ -290,7 +295,8 @@ namespace Server.Controllers
                 {
                     Name = name,
                     Type = Enums.ChatType.Public,
-                    Creator = tokens.UserId
+                    Creator = tokens.UserId,
+                    MembersCount = userIdsTable != null ? userIdsTable.Count : 0
                 };
                 db.Chats.Add(chat);
                 await db.SaveChangesAsync();

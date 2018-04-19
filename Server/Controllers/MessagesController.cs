@@ -16,9 +16,9 @@ namespace Server.Controllers
         private ServerContext db = new ServerContext();
 
         [HttpPost, RequireHttps]
-        public async Task<ActionResult> SendMessage(string accessToken, long? chatId, string text, string fileIds)
+        public async Task<ActionResult> SendMessage(string accessToken, long? chatId, string text = null, string fileIds = null)
         {
-            if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue || !(!String.IsNullOrWhiteSpace(text) || !String.IsNullOrWhiteSpace(fileIds)))
+            if (String.IsNullOrWhiteSpace(accessToken) || !chatId.HasValue || (String.IsNullOrWhiteSpace(text) && String.IsNullOrWhiteSpace(fileIds)))
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
             }
@@ -69,7 +69,7 @@ namespace Server.Controllers
                 db.Messages.Add(message);
                 await db.SaveChangesAsync();
 
-                if (ids != null)
+                if (ids != null || ids.Count != 0)
                 {
                     foreach (var e in ids)
                     {
@@ -141,9 +141,9 @@ namespace Server.Controllers
                 switch (direction)
                 {
                     case Enums.MessagesDirection.After:
-                        return Json(await db.Messages.Where(e => e.ChatId == chatId && e.Date > date).Take(count.Value).Select(e => new { id = e.Id, text = e.Text, chatId = e.ChatId, userId = e.UserId, isReaded = e.IsReaded, date = e.Date}).ToArrayAsync());
+                        return Json(await db.Messages.Where(e => e.ChatId == chatId && e.Date > date && db.DeletedMessages.FirstOrDefault(el => el.MessageId == e.Id && el.UserId == tokens.UserId) == null).Take(count.Value).Select(e => new { id = e.Id, text = e.Text, chatId = e.ChatId, userId = e.UserId, isReaded = e.IsReaded, date = e.Date, attachments = db.Attachments.Where(el => el.MessageId == e.Id) }).ToArrayAsync(), JsonRequestBehavior.AllowGet);
                     case Enums.MessagesDirection.Before:
-                        return Json(await db.Messages.Where(e => e.ChatId == chatId && e.Date < date).Reverse().Take(count.Value).Select(e => new { id = e.Id, text = e.Text, chatId = e.ChatId, userId = e.UserId, isReaded = e.IsReaded, date = e.Date }).ToArrayAsync());
+                        return Json(await db.Messages.Where(e => e.ChatId == chatId && e.Date < date && db.DeletedMessages.FirstOrDefault(el => el.MessageId == e.Id && el.UserId == tokens.UserId) == null).Reverse().Take(count.Value).Select(e => new { id = e.Id, text = e.Text, chatId = e.ChatId, userId = e.UserId, isReaded = e.IsReaded, date = e.Date, attachments = db.Attachments.Where(el => el.MessageId == e.Id) }).ToArrayAsync(), JsonRequestBehavior.AllowGet);
                 }
             }
 
@@ -221,6 +221,11 @@ namespace Server.Controllers
                         try
                         {
                             db.DeletedMessages.Remove(await db.DeletedMessages.FirstOrDefaultAsync(e => e.MessageId == message.Id && e.UserId == tokens.UserId));
+                        }
+                        catch { }
+                        try
+                        {
+                            db.Attachments.RemoveRange(db.Attachments.Where(e => e.MessageId == message.Id));
                         }
                         catch { }
                         db.Messages.Remove(message);
