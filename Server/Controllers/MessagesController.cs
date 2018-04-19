@@ -141,9 +141,9 @@ namespace Server.Controllers
                 switch (direction)
                 {
                     case Enums.MessagesDirection.After:
-                        return Json(await db.Messages.Where(e => e.ChatId == chatId && e.Date > date && db.DeletedMessages.FirstOrDefault(el => el.MessageId == e.Id && el.UserId == tokens.UserId) == null).Take(count.Value).Select(e => new { id = e.Id, text = e.Text, chatId = e.ChatId, userId = e.UserId, isReaded = e.IsReaded, date = e.Date, attachments = db.Attachments.Where(el => el.MessageId == e.Id) }).ToArrayAsync(), JsonRequestBehavior.AllowGet);
+                        return Json(await db.Messages.Where(e => e.ChatId == chatId && e.Date > date && db.DeletedMessages.FirstOrDefault(el => el.MessageId == e.Id && el.UserId == tokens.UserId) == null).Take(count.Value).Select(e => new { id = e.Id, text = e.Text, chatId = e.ChatId, userId = e.UserId, isReaded = e.IsReaded, date = e.Date, attachments = db.Attachments.Where(el => el.MessageId == e.Id).Select(el => db.UploadedFiles.Find(el.UploadedFiles).Link) }).ToArrayAsync(), JsonRequestBehavior.AllowGet);
                     case Enums.MessagesDirection.Before:
-                        return Json(await db.Messages.Where(e => e.ChatId == chatId && e.Date < date && db.DeletedMessages.FirstOrDefault(el => el.MessageId == e.Id && el.UserId == tokens.UserId) == null).Reverse().Take(count.Value).Select(e => new { id = e.Id, text = e.Text, chatId = e.ChatId, userId = e.UserId, isReaded = e.IsReaded, date = e.Date, attachments = db.Attachments.Where(el => el.MessageId == e.Id) }).ToArrayAsync(), JsonRequestBehavior.AllowGet);
+                        return Json(await db.Messages.Where(e => e.ChatId == chatId && e.Date < date && db.DeletedMessages.FirstOrDefault(el => el.MessageId == e.Id && el.UserId == tokens.UserId) == null).Reverse().Take(count.Value).Select(e => new { id = e.Id, text = e.Text, chatId = e.ChatId, userId = e.UserId, isReaded = e.IsReaded, date = e.Date, attachments = db.Attachments.Where(el => el.MessageId == e.Id).Select(el => db.UploadedFiles.Find(el.UploadedFiles).Link) }).ToArrayAsync(), JsonRequestBehavior.AllowGet);
                 }
             }
 
