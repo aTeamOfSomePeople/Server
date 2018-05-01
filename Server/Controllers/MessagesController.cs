@@ -141,10 +141,48 @@ namespace Server.Controllers
                 switch (direction)
                 {
                     case Enums.MessagesDirection.After:
-                        return Json(await db.Messages.Where(e => e.ChatId == chatId && e.Date > date && db.DeletedMessages.FirstOrDefault(el => el.MessageId == e.Id && el.UserId == tokens.UserId) == null).Take(count.Value).Select(e => new { id = e.Id, text = e.Text, chatId = e.ChatId, userId = e.UserId, isReaded = e.IsReaded, date = e.Date, attachments = db.Attachments.Where(el => el.MessageId == e.Id).Select(el => db.UploadedFiles.Find(el.UploadedFiles).Link) }).ToArrayAsync(), JsonRequestBehavior.AllowGet);
+                        return Json(await db.Messages.Where(e => e.ChatId == chatId && e.Date > date && db.DeletedMessages.FirstOrDefault(el => el.MessageId == e.Id && el.UserId == tokens.UserId) == null).Take(count.Value).Select(e => new { id = e.Id, text = e.Text, chatId = e.ChatId, userId = e.UserId, isReaded = e.IsReaded, date = e.Date, attachments = db.Attachments.Where(el => el.MessageId == e.Id).Select(el => db.UploadedFiles.FirstOrDefault(ele => ele.Id == el.UploadedFiles.Id).Link) }).ToArrayAsync(), JsonRequestBehavior.AllowGet);
                     case Enums.MessagesDirection.Before:
-                        return Json(await db.Messages.Where(e => e.ChatId == chatId && e.Date < date && db.DeletedMessages.FirstOrDefault(el => el.MessageId == e.Id && el.UserId == tokens.UserId) == null).Reverse().Take(count.Value).Select(e => new { id = e.Id, text = e.Text, chatId = e.ChatId, userId = e.UserId, isReaded = e.IsReaded, date = e.Date, attachments = db.Attachments.Where(el => el.MessageId == e.Id).Select(el => db.UploadedFiles.Find(el.UploadedFiles).Link) }).ToArrayAsync(), JsonRequestBehavior.AllowGet);
+                        return Json(await db.Messages.Where(e => e.ChatId == chatId && e.Date < date && db.DeletedMessages.FirstOrDefault(el => el.MessageId == e.Id && el.UserId == tokens.UserId) == null).Reverse().Take(count.Value).Select(e => new { id = e.Id, text = e.Text, chatId = e.ChatId, userId = e.UserId, isReaded = e.IsReaded, date = e.Date, attachments = db.Attachments.Where(el => el.MessageId == e.Id).Select(el => db.UploadedFiles.FirstOrDefault(ele => ele.Id == el.UploadedFiles.Id).Link) }).ToArrayAsync(), JsonRequestBehavior.AllowGet);
                 }
+            }
+
+            return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
+        }
+
+        public async Task<ActionResult> GetMessage(string accessToken, long? messageId)
+        {
+            if (String.IsNullOrWhiteSpace(accessToken) || !messageId.HasValue)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
+            }
+
+            if (ModelState.IsValid)
+            {
+                var tokens = await db.Tokens.FirstOrDefaultAsync(e => e.AccessToken == accessToken);
+                if (tokens == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Token is invalid");
+                }
+
+                var message = await db.Messages.FindAsync(messageId);
+                if (message == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Message is not exists");
+                }
+
+                var chat = await db.Chats.FindAsync(message.ChatId);
+                if (chat == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Chat is not exists");
+                }
+
+                if (!await db.UsersInChats.AnyAsync(e => e.UserId == tokens.UserId && e.ChatId == chat.Id && e.CanWrite))
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You can't get messages from this chat");
+                }
+
+                return Json(new { message.Id, message.ChatId, message.UserId, message.Text, message.Date, message.IsReaded }, JsonRequestBehavior.AllowGet);
             }
 
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");

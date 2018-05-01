@@ -51,7 +51,7 @@ namespace Server.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
             }
-            var token = await ValidToken(accessToken, db);
+            var token = await (new TokensController().ValidToken(accessToken));
             if (token != null)
             {
                 return Json(new Utils.CheckTokenResponse()
@@ -65,7 +65,7 @@ namespace Server.Controllers
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Token is invalid");
         }
 
-        internal async static Task<Tokens> ValidToken(string accessToken, ServerContext db)
+        internal async Task<Tokens> ValidToken(string accessToken)
         {
             return await db.Tokens.FirstOrDefaultAsync(e => e.AccessToken == accessToken && e.Expire > DateTime.UtcNow);
         }

@@ -25,7 +25,7 @@ namespace Server.Controllers
 
             if (ModelState.IsValid)
             {
-                var tokens = await TokensController.ValidToken(accessToken, db);
+                var tokens = await (new TokensController().ValidToken(accessToken));
                 if (tokens == null)
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");
@@ -60,7 +60,7 @@ namespace Server.Controllers
 
             if (ModelState.IsValid)
             {
-                var tokens = await TokensController.ValidToken(accessToken, db);
+                var tokens = await (new TokensController().ValidToken(accessToken));
                 if (tokens == null)
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");
@@ -138,7 +138,7 @@ namespace Server.Controllers
 
             if (ModelState.IsValid)
             {
-                var tokens = await TokensController.ValidToken(accessToken, db);
+                var tokens = await (new TokensController().ValidToken(accessToken));
                 if (tokens == null)
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");
@@ -192,7 +192,7 @@ namespace Server.Controllers
             }
             if (ModelState.IsValid)
             {
-                var tokens = await TokensController.ValidToken(accessToken, db);
+                var tokens = await (new TokensController().ValidToken(accessToken));
                 if (tokens == null)
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");
@@ -258,7 +258,7 @@ namespace Server.Controllers
             }
             if (ModelState.IsValid)
             {
-                var tokens = await TokensController.ValidToken(accessToken, db);
+                var tokens = await (new TokensController().ValidToken(accessToken));
                 if (tokens == null)
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");
@@ -335,7 +335,7 @@ namespace Server.Controllers
 
             if (ModelState.IsValid)
             {
-                var tokens = await TokensController.ValidToken(accessToken, db);
+                var tokens = await (new TokensController().ValidToken(accessToken));
                 if (tokens == null)
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");
@@ -389,7 +389,7 @@ namespace Server.Controllers
             
             if (ModelState.IsValid)
             {
-                var tokens = await TokensController.ValidToken(accessToken, db);
+                var tokens = await (new TokensController().ValidToken(accessToken));
                 if (tokens == null)
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");
@@ -445,7 +445,7 @@ namespace Server.Controllers
             }
             if (ModelState.IsValid)
             {
-                var tokens = await TokensController.ValidToken(accessToken, db);
+                var tokens = await (new TokensController().ValidToken(accessToken));
                 if (tokens == null)
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");
@@ -597,7 +597,7 @@ namespace Server.Controllers
             }
             if (ModelState.IsValid)
             {
-                var tokens = await TokensController.ValidToken(accessToken, db);
+                var tokens = await (new TokensController().ValidToken(accessToken));
                 if (tokens == null)
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Invalid access token");

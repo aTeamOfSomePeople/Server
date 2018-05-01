@@ -12,18 +12,19 @@ namespace Server.Hubs
     public class ChatHub : Hub
     {
         internal static Dictionary<string, long> users = new Dictionary<string, long>();
-        public void connect(string accessToken)
+        public async void connect(string accessToken)
         {
-            var user = (Utils.CheckTokenResponse)((System.Web.Mvc.JsonResult)(new Controllers.TokensController().CheckToken(accessToken).Result)).Data;
+            var user = await new Controllers.TokensController().ValidToken(accessToken);
+            //var user = (Utils.CheckTokenResponse)((System.Web.Mvc.JsonResult)(new Controllers.TokensController().CheckToken(accessToken).Result)).Data;
             if (user != null)
             {
                 foreach (var chatId in (List<long>)((System.Web.Mvc.JsonResult)(new Controllers.UsersController().GetChats(accessToken, 50, 0).Result)).Data)
                 {
-                    Groups.Add(Context.ConnectionId, chatId.ToString());
+                    await Groups.Add(Context.ConnectionId, chatId.ToString());
                 }
                 try
                 {
-                    users.Add(Context.ConnectionId, user.userId);
+                    users.Add(Context.ConnectionId, user.UserId);
                 }
                 catch { }
             }
