@@ -297,11 +297,6 @@ namespace Server.Controllers
 
         public async Task<ActionResult> FindUsersByName(string name, int? count, int start = 0)
         {
-            if (String.IsNullOrWhiteSpace(name))
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Arguments is null or empty");
-            }
-
             if (start < 0)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Start must be greater than zero");
@@ -326,6 +321,11 @@ namespace Server.Controllers
             }
 
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
+        }
+
+        internal async Task<List<long>> GetAllChats(long userId)
+        {
+            return await db.UsersInChats.Where(e => e.UserId == userId).Select(e => e.ChatId).ToListAsync();
         }
 
         protected override void Dispose(bool disposing)

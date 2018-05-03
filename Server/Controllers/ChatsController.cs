@@ -175,7 +175,7 @@ namespace Server.Controllers
                 await db.SaveChangesAsync();
 
                 var toAdd = Hubs.ChatHub.users.Where(e => e.Value == tokens.UserId || e.Value == secondUserId);
-                NewChat(chat.Id, toAdd);
+                await NewChat(chat.Id, toAdd);
 
                 return new HttpStatusCodeResult(HttpStatusCode.OK);
             }
@@ -241,7 +241,7 @@ namespace Server.Controllers
                 await db.SaveChangesAsync();
 
                 var toAdd = Hubs.ChatHub.users.Where(e => userIdsTable.Contains(e.Value));
-                NewChat(chat.Id, toAdd);
+                await NewChat(chat.Id, toAdd);
 
                 return new HttpStatusCodeResult(HttpStatusCode.OK);
             }
@@ -312,7 +312,7 @@ namespace Server.Controllers
                 await db.SaveChangesAsync();
 
                 var toAdd = Hubs.ChatHub.users.Where(e => userIdsTable.Contains(e.Value));
-                NewChat(chat.Id, toAdd);
+                await NewChat(chat.Id, toAdd);
 
                 return new HttpStatusCodeResult(HttpStatusCode.OK);
             }
@@ -884,7 +884,7 @@ namespace Server.Controllers
             base.Dispose(disposing);
         }
 
-        private static async void NewChat(long chatId, IEnumerable<KeyValuePair<string, long>> toAdd)
+        private static async Task NewChat(long chatId, IEnumerable<KeyValuePair<string, long>> toAdd)
         {
             var context = Microsoft.AspNet.SignalR.GlobalHost.ConnectionManager.GetHubContext<Hubs.ChatHub>();
             foreach (var e in toAdd)

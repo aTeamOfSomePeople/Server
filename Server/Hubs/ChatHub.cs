@@ -12,13 +12,14 @@ namespace Server.Hubs
     public class ChatHub : Hub
     {
         internal static Dictionary<string, long> users = new Dictionary<string, long>();
-        public async void connect(string accessToken)
+
+        public async Task connect(string accessToken)
         {
-            var user = await new Controllers.TokensController().ValidToken(accessToken);
-            //var user = (Utils.CheckTokenResponse)((System.Web.Mvc.JsonResult)(new Controllers.TokensController().CheckToken(accessToken).Result)).Data;
+            var task = new Controllers.TokensController().ValidToken(accessToken);
+            var user = await task;
             if (user != null)
             {
-                foreach (var chatId in (List<long>)((System.Web.Mvc.JsonResult)(new Controllers.UsersController().GetChats(accessToken, 50, 0).Result)).Data)
+                foreach (var chatId in await (new Controllers.UsersController().GetAllChats(user.UserId)))
                 {
                     await Groups.Add(Context.ConnectionId, chatId.ToString());
                 }
@@ -27,40 +28,6 @@ namespace Server.Hubs
                     users.Add(Context.ConnectionId, user.UserId);
                 }
                 catch { }
-            }
-        }
-
-        internal void newChat(Models.Chats chat, List<long> userIds)
-        {
-            if (chat.Type == Enums.ChatType.Dialog)
-            {
-                return;
-            }
-            foreach (var userId in userIds)
-            {
-                foreach (var user in users.Where(e => e.Value == userId))
-                {
-                    Groups.Add(user.Key, chat.Id.ToString()).Wait();
-                }
-            }
-            Clients.Group(chat.Id.ToString()).newChat(new { id = chat.Id, creator = chat.Creator, name = chat.Name, avatar = chat.Avatar, type = chat.Type});
-        }
-
-        internal void newDialog(Models.Chats chat, long firstUser, long secondUser)
-        {
-            if (chat.Type != Enums.ChatType.Dialog)
-            {
-                return;
-            }
-
-            var names = chat.Name.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
-            foreach (var user in users.Where(e => e.Value == firstUser))
-            {
-                Clients.Client(user.Key.ToString()).newChat(new { id = chat.Id, creator = chat.Creator, name = names[0], avatar = chat.Avatar, type = chat.Type });
-            }
-            foreach (var user in users.Where(e => e.Value == secondUser))
-            {
-                Clients.Client(user.Key.ToString()).newChat(new { id = chat.Id, creator = chat.Creator, name = names[1], avatar = chat.Avatar, type = chat.Type });
             }
         }
 
