@@ -277,7 +277,7 @@ namespace Server.Controllers
                         db.DeletedMessages.Add(new DeletedMessages()
                         {
                             MessageId = message.Id,
-                            UserId = tokens.Id,
+                            UserId = tokens.UserId,
                         });
                         break;
                 }
