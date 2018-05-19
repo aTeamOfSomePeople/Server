@@ -264,6 +264,7 @@ namespace Server.Controllers
                         try
                         {
                             db.Attachments.RemoveRange(db.Attachments.Where(e => e.MessageId == message.Id));
+                            await db.SaveChangesAsync();
                         }
                         catch { }
                         db.Messages.Remove(message);
