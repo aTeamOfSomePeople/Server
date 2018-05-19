@@ -182,7 +182,7 @@ namespace Server.Controllers
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "You can't get messages from this chat");
                 }
 
-                return Json(new { message.Id, message.ChatId, message.UserId, message.Text, message.Date, message.IsReaded }, JsonRequestBehavior.AllowGet);
+                return Json(new { message.Id, message.ChatId, message.UserId, message.Text, message.Date, message.IsReaded, attachments = db.Attachments.Where(el => el.MessageId == message.Id).Select(el => db.UploadedFiles.FirstOrDefault(ele => ele.Id == el.UploadedFiles.Id).Link) }, JsonRequestBehavior.AllowGet);
             }
 
             return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "Fail");
